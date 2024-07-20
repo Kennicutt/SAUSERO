@@ -17,7 +17,7 @@ class OsirisAlign:
         """Inicializamos la clase definiendo parámetros importantes.
 
         Args:
-            program (str): Programa científico a alinear.
+            program (str): Programa científico a alinear. Cómo incluir cambios
             block (str): Número del bloque del programa científico.
         """
         self.conf = conf
