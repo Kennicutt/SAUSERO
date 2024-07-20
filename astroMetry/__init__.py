@@ -1,0 +1,1 @@
+from astroMetry.astrometry_osirisplus import *
