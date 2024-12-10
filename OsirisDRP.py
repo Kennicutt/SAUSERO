@@ -6,8 +6,62 @@ from photometry.photometry_osirisplus import *
 from astropy import units as u
 
 import argparse, time
-import os, json
+import os, json, warnings
+from Color_Codes import bcolors as bcl
+import logging
+from loguru import logger
 
+
+#logging.getLogger("astropy").setLevel(logging.INFO)
+
+warnings.filterwarnings("ignore", category=UserWarning)
+warnings.filterwarnings("ignore", category=RuntimeWarning)
+
+############## General Configurations ##############
+
+# Logging configuration
+
+# Crear un filtro personalizado para ocultar mensajes que contienen ciertas palabras
+#class OcultarMensajes(logging.Filter):
+#    def filter(self, record):
+#        # Ocultar mensajes que contienen la palabra 'ocultar'
+#        if 'INFO:' in record.getMessage():
+#            return False
+#        return True
+
+#logger = logging.getLogger("main_logger")
+#logger.setLevel(logging.INFO)  # Establecer el nivel general a DEBUG
+#
+#logger.handlers = [h for h in logger.handlers if not isinstance(h, logging.StreamHandler)]
+#
+#if not logger.hasHandlers():
+#    # Crear un manejador para escribir en un archivo
+#    file_handler = logging.FileHandler('sausero.log', mode='w')
+#    file_handler.setLevel(logging.INFO)  # Guardar todos los mensajes en el archivo
+#
+#    # Crear un manejador para la consola
+#    console_handler = logging.StreamHandler()
+#    console_handler.setLevel(logging.INFO)  # Mostrar INFO y niveles superiores en la consola
+#
+#    # Crear un formato para los mensajes
+#    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(module)s - %(funcName)s - %(message)s')
+#    file_handler.setFormatter(formatter)
+#    console_handler.setFormatter(formatter)
+#
+#    # Agregar el filtro personalizado al manejador de la consola (o al logger en general)
+#    console_handler.addFilter(OcultarMensajes())
+#
+#    # Agregar los manejadores al logger
+#    #if not logger.hasHandlers():
+#    logger.addHandler(file_handler)
+#    logger.addHandler(console_handler)
+#
+#
+#logging.getLogger('ccdproc').setLevel(logging.ERROR)
+#logging.getLogger('lacosmic').setLevel(logging.ERROR)
+#logging.getLogger('astropy').setLevel(logging.ERROR)
+
+# Parse configuration
 parser = argparse.ArgumentParser(
                      prog = 'OsirisDRP',
                      description = 'This software reduces the observations carried out by OSIRIS \
@@ -22,8 +76,11 @@ parser.add_argument('-bl','--block', help='Select the block of the program.',
 
 args = parser.parse_args()
 
+############## Predefined functions #############
+
+
 def readJSON():
-    return json.load(open("/home/fabricio.perez/Core/Proyectos/SAUSERO/configuration.json"))
+    return json.load(open("configuration.json"))
 
 def Results(PATH, ZP, eZP, MASK, filt, ext_info = extinction_dict):
     """ Esta función añade información relevante a la imagen de ciencia
@@ -43,35 +100,53 @@ def Results(PATH, ZP, eZP, MASK, filt, ext_info = extinction_dict):
     for sky in ['SKY', 'NOSKY']:
         fname = ic.files_filtered(include_path=True, filtro=filt, ssky=sky)[0]
         frame = CCDData.read(fname, unit='adu')
-        print(f'Load science image: {os.path.basename(fname)}')
+        logger.info(f'Load science image: {bcl.BOLD}{os.path.basename(fname)}{bcl.ENDC}')
         hd = frame.header
         hd['ZP'] = (ZP, 'ZeroPoint estimation')
         hd['eZP'] = (eZP, 'Error ZeroPoint estimation')
-        print(f'ZeroPoint information added to header')
+        logger.info('ZeroPoint information added to header')
         extinction, e_extinction = ext_info[filt]
         hd['EXT']=(extinction, 'Filter extinction')
         hd['eEXT']=(e_extinction, 'Error filter extinction')
-        print(f'Extinction information added to header')
+        logger.info('Extinction information added to header')
         frame.header = hd
         frame.unit = u.adu/u.second
-        print(f'Change units: ADUs to ADUs/second')
+        logger.info('Change units: ADUs to ADUs/second')
         
         frame.data = (frame.data / hd['EXPTIME'])
         frame.write(PATH / f"{hd['GTCPRGID']}_{hd['GTCOBID']}_{filt}_{(hd['DATE'].split('T')[0]).replace('-','')}_{sky}_BBI.fits",
                     overwrite=True)
-        print(f"Frame generated: {hd['GTCPRGID']}_{hd['GTCOBID']}_{filt}_{(hd['DATE'].split('T')[0]).replace('-','')}_{sky}_BBI.fits")
+        logger.info(f"Frame generated: {bcl.BOLD}{hd['GTCPRGID']}_{hd['GTCOBID']}_{filt}_{(hd['DATE'].split('T')[0]).replace('-','')}_{sky}_BBI.fits{bcl.ENDC}")
     
 
 if __name__ == '__main__':
+
+    print(f"{bcl.OKBLUE}***********************************************************************{bcl.ENDC}")
+    print(f"{bcl.OKBLUE}************************* WELCOME TO SAUSERO **************************{bcl.ENDC}")
+    print(f"{bcl.OKBLUE}***********************************************************************{bcl.ENDC}")
+    print("\n")
+    print(f"{bcl.BOLD}************************ IMPORTANT INFORMATION ************************{bcl.ENDC}")
+    print("\n")
+    print(f"This software is to reduce Broad Band Imaging observation obtained with OSIRIS+.\n\
+For its correct uses, you need to modify the configuration file that you can find\n\
+in the directory where this software have installed. Additionally, you need to create\n\
+an account in Astrometry.net. Once you have the code that you allow to use the API,\n\
+you need fill the correct variable. ")
+    print(f"\n")
+
     PRG = args.program
     OB = args.block
+
+    hora_local = time.localtime()
+    logger.add(f"FRAMES/{PRG}_{OB}/sausero_{time.strftime('%Y-%m-%d_%H:%M:%S', hora_local)}.log", format="{time} {level} {message} ({module}:{line})", level="INFO",
+               filter=lambda record: 'astropy' not in record["name"])
 
     conf = readJSON()
     
     #Reduction Recipe. Esta receta se encarga de efectuar la limpieza de la imágenes
     #haciendo una sustracción del masterbias y dividiendo por el masterflat normalizado.
     #Posteriormente se salvan las imágenes ya limpias.
-    print('Start the reduction...')
+    logger.info(f'{bcl.HEADER}---------- Starting the reduction ----------{bcl.ENDC}')
     o = Reduction(PRG, OB, main_path=conf['DIRECTORIES']['PATH_DATA'],
                 path_mask=conf['DIRECTORIES']['PATH_BPM'])
     o.get_imagetypes()
@@ -91,37 +166,39 @@ if __name__ == '__main__':
     o.save_target(sky=conf['REDUCTION']['save_sky'])
     o.save_target(fringing=conf['REDUCTION']['save_fringing'])
     o.save_target()
-    print('Finished the reduction successfully')
+    logger.info(f'{bcl.HEADER}¡¡¡¡¡¡¡ Finished the reduction successfully !!!!!!!{bcl.ENDC}')
     print(2*"\n")
     
     #Aligned Recipe. Las imágenes de ciencia limpias son alineadas en función del
     #filtro empleado en cada caso. Luego se salva como imagen alienada.
-    print("Start the alignment...")
+    logger.info(f"{bcl.HEADER}---------- Starting the alignment ----------{bcl.ENDC}")
     al = OsirisAlign(PRG, OB, conf)
     for filt in list(set(al.ic.summary['filtro'])):
         for sky in ['SKY', 'NOSKY']:
-            print(f'Aligment for {filt} & {sky}')
+            logger.info(f'{bcl.WARNING}++++++++++ Aligment for {filt} & {sky}{bcl.ENDC} ++++++++++')
             align = al.aligning(filt, sky=sky)
             lst = al.load_frames(filt, sky=sky)
             fr = CCDData.read(lst[0], unit='adu')
             header = fr.header
             header['exptime'] = al.total_exptime * (al.num + 1.)
+            logger.info(f"Total exposure time estimated: {bcl.BOLD}{header['exptime']} sg{bcl.ENDC}")
             wcs = fr.wcs
+            logger.info(f"Update the WCS information")
             save_fits(align, header, wcs, al.PATH_REDUCED / f'aligned_result_{filt}_{sky}.fits')
-            print(f'Alineado para {filt} & {sky} realizado exitosamente')
+            print(f'{bcl.HEADER}¡¡¡¡¡¡¡ Alineado para {filt} & {sky} realizado exitosamente !!!!!!!{bcl.ENDC}')
 
-    print('El alineado para cada filtro finalizado')
+    print('{bcl.HEADER}¡¡¡¡¡¡¡ El alineado para cada filtro finalizado !!!!!!!{bcl.ENDC}')
     print(2*"\n")
 
     #Astrometry Recipe. La imagen alineada para cada filtro se aplica un proceso de
     #astrometrización de la imagen, para determinar con precisión la posición real
     #de los cuerpos celestes presentes en la escena.
-    print("Start the astrometrization...")
+    logger.info(f"{bcl.HEADER}---------- Start the astrometrization ----------{bcl.ENDC}")
     del filt
     ic_ast = ccdp.ImageFileCollection(al.PATH_REDUCED, keywords='*', glob_include='ali*', glob_exclude='*NOSKY*')
     lst_filt = list(ic_ast.summary['filtro'])
     for filt in lst_filt:
-        print(f'Astrometrization for {filt}')
+        logger.info(f'{bcl.WARNING}++++++++++ Astrometrization for {filt} ++++++++++{bcl.ENDC}')
         best_wcs, new_frame = solving_astrometry(PRG, OB, filt, conf, sky='SKY', calib_std=False)
         for sky in ['SKY', 'NOSKY']:
             if sky == 'SKY':
@@ -130,21 +207,21 @@ if __name__ == '__main__':
                 nosky = CCDData.read(al.PATH_REDUCED / f'aligned_result_{filt}_{sky}.fits', unit='adu')
                 nosky.wcs = WCS(best_wcs)
                 nosky.write(al.PATH_REDUCED / f'ast_result_{filt}_{sky}.fits', overwrite=True)
-            print(f'Astrometrization done successfully for {filt}')
+            print(f'{bcl.HEADER}¡¡¡¡¡¡¡ Astrometrization done successfully for {filt} !!!!!!!{bcl.ENDC}')
             time.sleep(10)
     
-    print('Start astrometrization for STD star')
+    logger.info(f'{bcl.HEADER}---------- Start astrometrization for STD star ----------{bcl.ENDC}')
     time.sleep(30)
     ic_std = ccdp.ImageFileCollection(al.PATH_REDUCED, keywords='*', glob_include='*std*', glob_exclude='*NOSKY*')
     best_wcs_std, new_frame_std = solving_astrometry(PRG, OB, filt, conf, sky='SKY', calib_std=True)
     for path_to_std in ic_std.files_filtered(include_path=True):
-        print(f'Astrometrization for: {path_to_std}')
+        logger.info(f'{bcl.WARNING}++++++++++ Astrometrization for: {path_to_std} ++++++++++{bcl.ENDC}')
         std_img = CCDData.read(path_to_std, unit='adu')
         std_img.wcs = WCS(best_wcs_std)
         std_img.write(path_to_std, overwrite=True)
 
 
-    print('Astrometrization finished')
+    print(f'{bcl.HEADER}¡¡¡¡¡¡¡ Astrometrization finished !!!!!!!{bcl.ENDC}')
     print(2*"\n")
 
 
@@ -153,14 +230,13 @@ if __name__ == '__main__':
     #de los cuerpos celestes presentes en la imagen de ciencia. Este proceso se hace
     # por cada filtro empleado. Además, la función Results() permite incluir esta
     #información en el header de la imagen de ciencia limpia, alineada y astrometrizada.
-    print("Start the estimation of ZeroPoint...")
+    logger.info(f"{bcl.HEADER}---------- Starting the estimation of ZeroPoint ----------{bcl.ENDC}")
     del filt
     ic_pho = ccdp.ImageFileCollection(al.PATH_REDUCED, keywords='*', glob_include='red*')
     lst_filt = list(set(ic_pho.summary['filtro']))
     for filt in lst_filt:
-        print(f'Filter selected is {filt}')
+        logger.info(f'{bcl.WARNING}++++++++++ Filter selected is {filt} ++++++++++{bcl.ENDC}')
         ZP, eZP = photometry(PRG, OB, ic_pho.files_filtered(imgtype='STD',filter2=filt)[0], conf)
-        print(f'Estimated ZP: {ZP} +- {eZP} for {filt}')
         Results(al.PATH_REDUCED, ZP, eZP, o.MASK, filt)
     
-    print('End of the reduction. The results are available in reduced directory.')
+    logger.info(f'{bcl.HEADER}¡¡¡¡¡¡¡ End of the reduction. The results are available in reduced directory. !!!!!!!{bcl.ENDC}')

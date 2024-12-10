@@ -1,4 +1,4 @@
-import os, sys, time, json
+import os, sys, time, json, logging
 from pathlib import Path
 
 from astropy import units as u
@@ -12,61 +12,159 @@ import yaml as py
 import lacosmic
 import sep
 
+from Color_Codes import bcolors as bcl
+from loguru import logger
+
+#logger = logging.getLogger("main_logger")
+
+import logging, inspect
+class InterceptHandler(logging.Handler):
+    def emit(self, record: logging.LogRecord) -> None:
+        # Get corresponding Loguru level if it exists.
+        level: str | int
+        try:
+            level = logger.level(record.levelname).name
+        except ValueError:
+            level = record.levelno
+
+        # Find caller from where originated the logged message.
+        frame, depth = inspect.currentframe(), 0
+        while frame and (depth == 0 or frame.f_code.co_filename == logging.__file__):
+            frame = frame.f_back
+            depth += 1
+
+        #print(f"IMPRIMIENDO LEVEL: {level}")
+        if level != "DEBUG":
+            logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
+
+logging.basicConfig(handlers=[InterceptHandler()], level=logging.INFO, force=False)
+#
+#logging.getLogger("lacosmic.core")
+
+#import logging
+#from loguru import logger
+#import inspect
+#
+## Configuración de Loguru
+#logger.remove()
+#logger.add("sausero.log", format="{time} {level} {message} ({module}:{line})", level="INFO",
+#            filter=lambda record: 'astropy' not in record["name"])
+#
+#class InterceptHandler(logging.Handler):
+#    def emit(self, record: logging.LogRecord) -> None:
+#        # Obtener el nivel correspondiente en Loguru si existe
+#        level = record.levelname
+#        try:
+#            # Verificar si el nivel existe en Loguru
+#            level = logger.level(record.levelname).name
+#        except ValueError:
+#            # Si no existe, usamos el nivel numérico estándar
+#            level = record.levelno
+#
+#        # Encontrar el origen del log (archivo y línea)
+#        frame, depth = inspect.currentframe(), 0
+#        while frame and (depth == 0 or frame.f_code.co_filename == logging.__file__):
+#            frame = frame.f_back
+#            depth += 1
+#
+#        # Enviar el mensaje de log a Loguru
+#        logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
+#
+## Configura el manejador de logs estándar para que redirija a loguru
+#logging.basicConfig(handlers=[InterceptHandler()], level=0, force=True)
+#
+### Configuración de Loguru
+##logger.add("sausero.log", format="{time} {level} {message} ({module}:{line})", level="INFO",
+##            filter=lambda record: 'astropy' not in record["name"])
+#
+#logging.getLogger("astropy").setLevel("INFO")
+
 class Reduction:
-    """El objetivo de esta clase es llevar a cabo el proceso de limpieza de las imágenes de ciencia y
-    de calibración fotométrica.
+    """The aim is to carry out the cleaning procedure for science and photometric calibration frames. 
+    First, bias frames are averaged to obtain a master bias. Next, the master bias is used to subtract 
+    the offset level from the sky flat. The sky flats are then combined and divided by their median to 
+    normalize them. The final product is a master flat, which will be used to homogenize the sensor's 
+    response. Finally, the science and photometric calibration frames are subtracted by the masterbias 
+    and divided by the masterflat, resulting in the final reduced frames.
     """
 
     def __init__(self, gtcprgid, gtcobid, main_path, path_mask = None):
-        """Inicializamos la Clase mediante la definición de una serie de parámetros a partir de los que
-        se definirán otros de relevante importancia para el correcto proceso de limpieza de las imágenes.
+        """Object initialization to carry on the reduction.
 
         Args:
-            gtcprgid (str): Programa de observación que se desea reducir.
-            gtcobid (str): Bloque del programa definido que se desea reducir.
-            path_mask (str, optional): Directorio que contiene la BPM. 
-            Defaults to "/home/phase3/Fabricio-drm/SAUSERO/BPM/BPM_OSIRIS_CMS_sig5.fits".
+            gtcprgid (str): Observation program code.
+            gtcobid (str): Observation block code.
+            path_mask (str, optional): Path to BPM.
         """
-        print(f'Initializing the reduction for {gtcprgid}_{gtcobid}.')
+        logger.info(f'Initializing the reduction for {bcl.BOLD}{gtcprgid}_{gtcobid}{bcl.ENDC}.')
+        
         self.gtcprgid = gtcprgid
         self.gtcobid = gtcobid
         ROOT = main_path
-        #Se define a la ruta que contiene las imágenes crudas:
+
+        # The path that contains the raw images is defined
         self.PATH = Path(ROOT + str(gtcprgid) + '_' + str(gtcobid) + '/' + 'raw/')
-        #Se define el directorio que contendrá las imágenes intermedias y procesadas:
+        if os.path.exists(self.PATH):
+            logger.info("Path to raw data exists")
+        else:
+            logger.critical(f"Path to raw data does {bcl.BOLD}NOT{bcl.ENDC} exist")
+            sys.exit()
+
+        # The directory that will contain the intermediate and processed images is defined
         self.PATH_RESULTS = Path(ROOT + str(gtcprgid) + '_' + str(gtcobid) + '/' + 'reduced/')
         self.PATH_RESULTS.mkdir(parents=True, exist_ok=True)
+        if os.path.exists(self.PATH_RESULTS):
+            logger.info("Path to reduced directory has been created")
+        else:
+            logger.critical(f"Path to reduced directory has {bcl.BOLD}NOT{bcl.ENDC} been created")
+            sys.exit()
+
+        # Define the route to mask file
         self.path_mask = Path(path_mask)
-        #Se recopila la información sobre los frames ubicados en dicho directorio.
+        if os.path.exists(self.path_mask):
+            logger.info("Path to mask file exists")
+        else:
+            logger.critical(f"Path to mask file does {bcl.BOLD}NOT{bcl.ENDC} exist")
+            sys.exit()
+        
+        # The information about the frames located in that directory is gathered.
         self.ic = ccdp.ImageFileCollection(self.PATH)
+        if len(self.ic.summary) != 0:
+            logger.info("Data collection is ready")
+        else:
+            logger.critical(f"{bcl.BOLD}NOT files to reduce {bcl.ENDC}")
+            sys.exit()
+
+        # Define dictionaries
         self.DATA_DICT={}
         self.key_dict={'flat':'OsirisSkyFlat',
                        'target': 'OsirisBroadBandImage',
                        'std': 'OsirisBroadBandImage',
                        'bias': 'OsirisBias'
         }
-        self.master_dict = {} #Listo para usar
-        self.std_dict = {} #Listo para usar
-        self.target_dict = {} #Listo para ciencia
+        self.master_dict = {} #Ready to use
+        self.std_dict = {}
+        self.target_dict = {}
+
+        logger.info("Dictionaries have been created")
 
 
 
 
     @staticmethod
     def configure_mask(mask):
-        """Método estático que se emplea para adecuar la BPM
-        para su uso en las imágenes.
+        """Static method to reshape the BPM array to any frame shape.
 
         Args:
-            mask (int): BPM
+            mask (int): BPM HDU or CCDData Object
 
         Returns:
-            bool: BPM en términos booleanos para aplicar sobre
-            las imágenes.
+            bool: BPM array in booleans to apply over the frames.
         """
         mask = mask.data.astype(bool)
         matrix = np.ones(mask.shape)
         matrix[mask == False] = np.nan
+        logger.info("BPM is ready.")
         return matrix[230:2026,28:2060] # TRIM SECTION
 
 
@@ -74,38 +172,39 @@ class Reduction:
 
     @staticmethod
     def get_each_data(data_dict, value):
-        """Lee el contenido de un diccionario que contiene
-        la ruta a una serie de frames y abre estos frames
-        añadiéndolos a una lista.
+        """Reads the content of a dictionary that contains the path 
+        to a series of frames and opens these frames, adding them to 
+        a list.
 
         Args:
-            data_dict (dict): Diccionario que contiene las
-            rutas a uno o varios frames contenidos en una lista.
-            value (str): Key para acceder a lista de las rutas. 
+            data_dict (dict): Dictionary that contains the paths to 
+            one or more frames contained in a list.
+            value (str): Key to access the list of paths.
 
         Returns:
-            list: Es una lista que contiene las imágenes (matrices).
+            list: It is a list that contains the images.
         """
         ccd = []
         for frame_path in data_dict[value]:
             hdul = fits.open(frame_path)
             ccd.append(hdul[0].data[230:2026,28:2060]) #TRIM SECTION
+            
+        logger.info(f"List of images for key {bcl.BOLD}{value}{bcl.ENDC} is ready.")
         return ccd
 
 
 
     @staticmethod
     def combining(lst_frames):
-        """Este método estático combinan las imágenes contenidas
-        en una lista para obtener una imagen promediada. La
-        estrategia consiste en crear un cubo de datos y promediarlos.
+        """This static method combines the images contained in a list
+          to obtain an averaged image. The strategy involves creating 
+          a data cube and averaging them.
 
         Args:
-            lst_frames (list): Lista de imágenes a promediar.
+            lst_frames (list): List of images to average.
 
         Returns:
-            float: Genera una matriz promediada a partir del cubo de
-            imágenes.
+            image: Create an averaged matrix from data cube.
         """
         cube = np.dstack(lst_frames)
         cube.sort(axis=2)
@@ -115,14 +214,13 @@ class Reduction:
 
 
     def create_cubes(self, key):
-        """Genera un cubo de datos a partir de una lista de
-        imágenes (matrices).
+        """Create a data cube from an images list.
 
         Args:
-            key (str): Key del diccionario de imágenes científicas.
+            key (str): Key of the scientific images dictionary.
 
         Returns:
-            cube(float): Cubo de imágenes en profundidad.
+            cube(float): Data cube.
         """
         return np.dstack(self.target_dict[key],
                         axis=2)
@@ -136,17 +234,20 @@ class Reduction:
         """Sustracción del masterbias a una imagen.
 
         Args:
-            value (str): Key que permite acceder a las imágenes
-            del diccionario.
-            master (float): Matriz que representa al MasterBias.
-            data_dict (dict): Diccionario que alberga las imágenes. 
+            value (str): Key that allows access to the images in 
+            the dictionary.
+            master (float): MasterBias frame.
+            data_dict (dict): Images dictionary. 
 
         Returns:
-            list: Lista de frames con el MasterBias aplicado.
+            list: Frames list with masterbias applied.
         """
         ccd = self.get_each_data(data_dict, value)
 
         frames = [fr - master for fr in ccd]
+
+        logger.info(f"Masterbias applied to key {bcl.BOLD}{value}{bcl.ENDC} set.")
+        
         return frames
 
 
@@ -155,25 +256,26 @@ class Reduction:
 
 
     def clean_target(self, *args):
-        """Aplica a la imágenes de ciencia la sustracción del MasterBias y
-        la división por el MasterFlat normalizado.
+        """Applies the subtraction of the MasterBias and the division 
+        by the normalized MasterFlat to the science images.
 
         Returns:
-            list: Lista de imágenes cienfíficas limpias.
+            list: Cleaned science frame list
         """
         value, masterbias, masterflat = args
         ccd = self.get_each_data(self.DATA_DICT, value)
         frames = [(fr - masterbias)/masterflat for fr in ccd]
+        logger.info(f"Applied masterbias and masterflat over the frames for {value}.")
         return frames
 
 
     def get_imagetypes(self):
-        """ Este método tiene por objetivo establecer todos los tipos de imágenes que se encuentran
-        presentes en el directorio de las imágenes originales y sus correspondientes filtros empleados.
-        Para ello crea un diccionario vacío que cada key está constituida por el tipo de imagen y el
-        filtro empleado.
+        """ This method aims to establish all the types of images 
+        present in the original images directory and their corresponding 
+        filters used. To do this, it creates an empty dictionary where 
+        each key consists of the type of image and the filter used.
         """
-        print('Create all components ')
+        logger.info('Getting types of images and filters used.')
         self.filt_wheels = []
         matches = (self.ic.summary['obsmode'] != 'OsirisBias')
         matches1 = (self.ic.summary['obsmode'] != 'OsirisBias') & (self.ic.summary['filter1'] != 'OPEN')
@@ -200,7 +302,7 @@ class Reduction:
 
     def load_BPM(self):
         """
-        Este método abre el FITS que contiene la BPM.
+        This method opens the FITS file that contains the BPM.
         """
         bpm = CCDData.read(self.path_mask, unit=u.dimensionless_unscaled,
                             hdu=1)
@@ -208,24 +310,26 @@ class Reduction:
         #bpm = np.ones((2056,2073))
 
         self.MASK = self.configure_mask(bpm)
+        logger.info("BPM is ready.")
 
 
 
 
     def load_results(self):
-        """Genera una tabla de contenido específico en el directorio
-        de resultados. En concreto, de aquellas imágenes científicas
-        que ya han sido limpiadas.
+        """It generates a table of specific content in the results 
+        directory, specifically for those scientific images that 
+        have already been cleaned.
         """
         self.ic_r = ccdp.ImageFileCollection(self.PATH_RESULTS, keywords='*',
                                              glob_include='red*')
+        logger.info("Table with reduced science frames is ready.")
 
 
 
 
     def sort_down_drawer(self):
-        """Este método se encarga de almacenar las imágenes en función de su tipo y filtro en el
-        diccionario creado anteriormente.
+        """This method is responsible for storing the images based on 
+        their type and filter in the previously created dictionary.
         """
         for filt in self.filt_wheels:
             for elem in list(self.DATA_DICT.keys()):
@@ -234,30 +338,38 @@ class Reduction:
                     types_targets = set(self.ic.summary['object'][self.ic.summary['obsmode'] == 'OsirisBroadBandImage'])
                     if key == 'flat':
                         tmp_dict = {"obsmode":self.key_dict[key], filt: value}
+                        logger.info("Including flat frames.")
                     elif key == 'std':
                         target_type = [data for data in types_targets if 'STD' in data][0]
                         tmp_dict = {"obsmode":self.key_dict[key], filt: value, 'object':target_type}
+                        logger.info("Including photometric calibration frames.")
                     elif key == 'target':
                         target_type = [data for data in types_targets if not 'STD' in data][0]
                         tmp_dict = {"obsmode":self.key_dict[key], filt: value, 'object':target_type}
+                        logger.info("Including science frames.")
                     self.DATA_DICT[elem] = self.ic.files_filtered(**tmp_dict, include_path=True)
                 else:
                     self.DATA_DICT[elem] = self.ic.files_filtered(obsmode='OsirisBias', include_path=True)
+                    logger.info("Including bias frames.")
 
 
 
     def do_masterbias(self):
-        """Este método permite crear el MasterBias.
+        """
+        This method allows to create the masterbias frame.
         """
         bias = self.get_each_data(self.DATA_DICT, "bias")
 
         self.masterbias = self.combining(bias) * self.MASK
         self.master_dict['bias'] = self.masterbias
 
+        logger.info("Masterbias has been created.")
+
 
 
     def do_masterflat(self):
-        """Este método crea el MasterFlat para cada filtro.
+        """
+        This method create the masterflat frame for each filter.
         """
         lst_flat = [elem for elem in list(self.DATA_DICT.keys()) if 'flat' in elem]
         for filt in lst_flat:
@@ -266,15 +378,18 @@ class Reduction:
             median = np.nanmedian(combflat)
             masterflat = combflat/median
             self.master_dict[filt] = masterflat
+            logger.info(f"Masterflat has been created for {bcl.BOLD}{filt}\
+                        {bcl.ENDC} filter.")
 
 
 
     def get_std(self, no_CRs=False, contrast_arg = 1.5, cr_threshold_arg = 5.,
                 neighbor_threshold_arg = 5. ):
         """
-        Este método limpia las imágenes de calibración fotométrica.
+        This method cleans the photometric calibration frames.
         """
         lst_std = [elem for elem in list(self.DATA_DICT.keys()) if 'std' in elem]
+        logger.info("Processing photometric calibration frames.")
         for elem in lst_std:
             key, value = elem.split('+')
             args = [elem, self.master_dict['bias'],
@@ -283,6 +398,8 @@ class Reduction:
             lst_sd = []
             for sd in std:
                 if no_CRs:
+                    logger.info(f"Removing CRs to photometric calibration \
+                                frame for {value}.")
                     no_mask = np.nan_to_num(sd, nan=np.nanmedian(sd))
                     lst_sd.append(lacosmic.lacosmic(no_mask, contrast=contrast_arg,
                                                     cr_threshold=cr_threshold_arg,
@@ -290,6 +407,8 @@ class Reduction:
                                                     effective_gain=1.9,
                                                     readnoise=4.3)[0])
                 else:
+                    logger.info(f"NOT treatment for CRs applied to photometric calibration \
+                                frame for {value}.")
                     lst_sd.append(np.nan_to_num(sd, nan=np.nanmedian(sd)))
             self.std_dict[elem] = lst_sd
 
@@ -298,9 +417,10 @@ class Reduction:
     def get_target(self, no_CRs=False, contrast_arg = 1.5, cr_threshold_arg = 5.,
                 neighbor_threshold_arg = 5.):
         """
-        Este método limpia las imágenes de ciencia.
+        This method cleans the science frames.
         """
         lst_target = [elem for elem in list(self.DATA_DICT.keys()) if 'target' in elem]
+        logger.info("Processing science frames.")
         for elem in lst_target:
             key, value = elem.split('+')
             args = [elem, self.master_dict['bias'],
@@ -309,6 +429,7 @@ class Reduction:
             lst_tg = []
             for tg in target:
                 if no_CRs:
+                    logger.info(f"Removing CRs to science frames for {value}.")
                     no_mask = np.nan_to_num(tg, nan=np.nanmedian(tg))
                     lst_tg.append(lacosmic.lacosmic(no_mask, contrast=contrast_arg,
                                                     cr_threshold=cr_threshold_arg,
@@ -316,30 +437,36 @@ class Reduction:
                                                     effective_gain=1.9,
                                                     readnoise=4.3)[0])
                 else:
+                    logger.info(f"NOT treatment for CRs applied to science frames for {value}.")
                     lst_tg.append(np.nan_to_num(tg, nan=np.nanmedian(tg)))
             self.target_dict[elem] = lst_tg
 
 
 
     def remove_fringing(self):
-        """Este método permite llevar a cabo una limpieza especial en el caso del uso de Sloan_z
-        para eliminar el patrón de interferencia.
+        """
+        This method allows performing a special cleaning when using Sloan_z
+        to remove the interference pattern.
         """
         lst_results = [elem for elem in list(self.DATA_DICT.keys())]
         if 'Sloan_z' in lst_results:
+            logger.info("Removing the fringe on Sloan z filter.")
             fringe= self.target_dict['target+Sloan_z']
             combfringe = self.combining(fringe)
             median = np.nanmedian(combfringe)
             masterfringe = combfringe/median
             fr_free = [elem/masterfringe for elem in fringe]
             self.target_dict['fringe+Sloan_z'] = fr_free
+            logger.info("Frames with fringe free.")
 
         
     
     def sustract_sky(self):
-        """En esta instancia se procede a sustraer la contribución del fondo de cielo.
+        """
+        This method proceeds to subtract the contribution of the sky background.
         """
         lst_target_keys = [elem for elem in list(self.target_dict.keys())]
+        logger.info(f"Substracting sky background.")
         for elem in lst_target_keys:
             key, value = elem.split('+')
             lst_frames = self.target_dict['target+' + value]
@@ -347,11 +474,18 @@ class Reduction:
             cube = np.dstack(lst_frames)
             cube.sort(axis=2)
             im_avg = np.median(cube[:,:,:], axis=2)
+            logger.info(f"Creating sky background simulated for {value}.")
             self.bkg = sep.Background(im_avg)
             no_sky = []
             for fr in lst_frames:
                 no_sky.append(fr-self.bkg)
             self.target_dict['sky+' + value] = no_sky
+            if key == 'STD':
+                logger.info(f"List of photometric calibration frames without sky for {value} created.")
+            elif key == 'target':
+                logger.info(f"List of science frames without sky for {value} created.")
+            else:
+                logger.error("No defined option for key.")
             #else:
             #    print(f"ERROR: Target list for {value} is empty!!!")
             #    continue
@@ -359,18 +493,24 @@ class Reduction:
 
 
     def save_target(self, fringing=False, std=False, sky=False):
-        """Este método permite salvar las imágenes generadas durante el proceso de limpieza.
-        Además añade información al header que permitirá ayudar en proceso futuros.
+        """This method allows saving the images generated during the 
+        cleaning process. Additionally, it adds information to the 
+        header that will assist in future processes.
 
         Args:
-            fringing (bool, optional): Para indicar si se ha hecho corrección del patrón de interferencia.
-            Defaults to False.
-            std (bool, optional): Indicar si la/s imágen/es a salvar son imágenes de la estrella de
-            calibración fotométrica. Defaults to False.
+            fringing (bool, optional): To indicate whether interference 
+            pattern correction has been performed. Defaults to False.
+            std (bool, optional): Indicate whether the image(s) to be 
+            saved are photometric calibration star images. Defaults 
+            to False.
+            sky (bool, optional):Indicate whether the science image(s)
+            to be saved have sky or not. Defaults to False.
         """
         if not std:
+            logger.info("Saving photometric calibration frames reduced.")
             lst_results = [elem for elem in list(self.DATA_DICT.keys()) if 'target' in elem]
         else:
+            logger.info("Saving science frames reduced.")
             lst_results = [elem for elem in list(self.DATA_DICT.keys()) if 'std' in elem]
 
         for key in lst_results:
@@ -382,6 +522,7 @@ class Reduction:
                 status='REDUCED'
                 imagetype='SCIENCE'
                 target = self.target_dict['fringe+Sloan_z']
+                logger.info("Science frames without fringe.")
             elif std:
                 adjetive = 'std'
                 sky_status = 'SKY'
@@ -396,6 +537,7 @@ class Reduction:
                 imagetype='SCIENCE'
                 filt = key.split('+')[1]
                 target= self.target_dict[key]
+                logger.info("Science frames WITH sky.")
             else:
                 adjetive = 'target'
                 sky_status = 'NOSKY'
@@ -403,6 +545,7 @@ class Reduction:
                 imagetype='SCIENCE'
                 filt = key.split('+')[1]
                 target= self.target_dict['sky+'+ filt]
+                logger.info("Science frames WITHOUT sky.")
 
             for i in range(len(fnames)):
                 t = time.gmtime()
@@ -419,6 +562,8 @@ class Reduction:
                 hdul = fits.HDUList([primary_hdu])
 
                 filename = os.path.basename(fnames[i])
-                print(f"Storing the frame: reduced_5sig_{adjetive}_{sky_status}_{filename} for {hd['FILTER2']}")
+                logger.info(f"Storing the frame: {bcl.BOLD}reduced_5sig_{adjetive}_\
+                            {sky_status}_{filename}{bcl.ENDC} for {bcl.BOLD}\
+                                    {hd['FILTER2']}{bcl.ENDC}")
                 hdul.writeto(str(self.PATH_RESULTS / (f'reduced_5sig_{adjetive}_{sky_status}_' + filename)),
                             overwrite=True)

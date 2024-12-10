@@ -7,6 +7,9 @@ import time
 import matplotlib.pyplot as plt
 from astropy.visualization import LogStretch,imshow_norm, ZScaleInterval
 
+from Color_Codes import bcolors as bcl
+from loguru import logger
+
 
 class OsirisAlign:
     """Esta clase permite alinear las imágenes de ciencia (o de calibración fotométrica si procede).
@@ -42,7 +45,10 @@ class OsirisAlign:
         """
         self.tab = Table(self.ic.summary)
         sub_tab = self.tab[(self.tab['filter2']==filt) & (self.tab['ssky']==sky)]
+        logger.info(f"Looking for frames with {filt} and {sky}")
+        logger.info(f"{sub_tab}")
         self.total_exptime = sub_tab['exptime'].value.data[0]
+        logger.info(f"Exposure time per frame: {bcl.BOLD}{self.total_exptime} sg{bcl.ENDC}")
         return self.ic.files_filtered(imgtype="SCIENCE",
                                       filtro=filt,
                                       ssky = sky,
@@ -80,10 +86,12 @@ class OsirisAlign:
             float: Una imagen que está compuesta por varias imágenes alineadas incrementando el flujo
             de la misma.
         """
+        logger.info(f"Creating cube with frames for {filt}")
         cube = self.get_each_data(filt, sky=sky)
         REF = cube[0]
 
         self.num=0
+        logger.info(f"Number of frames in cube is: {bcl.BOLD}{len(cube)}{bcl.ENDC}")
         for IMG in cube[1:]:
             try:
                 t, __ = aa.find_transform(IMG, REF, 
@@ -94,15 +102,18 @@ class OsirisAlign:
                 align, footprint = aa.apply_transform(t, IMG, REF)
                 REF = REF + align
                 self.num += 1
-                print(f"Image NO: {self.num}")
+                logger.info(f"Image NO: {self.num}/{len(cube)}")
             except aa.MaxIterError:
-                print(aa.MaxIterError)
+                #print(aa.MaxIterError)
+                logger.error(f"{bcl.FAIL}ERROR{bcl.ENDC}: {aa.MaxIterError}")
                 pass
             except ValueError:
-                print(ValueError)
+                #print(ValueError)
+                logger.error(f"{bcl.FAIL}ERROR{bcl.ENDC}: {ValueError}")
                 pass
             except TypeError:
-                print(TypeError)
+                #print(TypeError)
+                logger.error(f"{bcl.FAIL}ERROR{bcl.ENDC}: {TypeError}")
                 pass
 
         return REF
@@ -134,3 +145,4 @@ def save_fits(image, header, wcs, fname):
     """
     ccd = CCDData(data=image, header=header, wcs=wcs, unit='adu')
     ccd.write(fname, overwrite=True)
+    logger.info(f"New image has been created: {fname}")

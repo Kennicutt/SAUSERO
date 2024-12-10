@@ -1,9 +1,11 @@
-import yaml, glob
+import yaml, glob, os
 
 from astropy.nddata import CCDData
 from astropy.wcs import WCS
 from astrometry_net_client import Session, FileUpload, Settings
 
+from Color_Codes import bcolors as bcl
+from loguru import logger
 
 def settings(PATH_TO_CONFIG_FILE):
     """ Esta función abre el archivo que contiene los parámetros
@@ -26,6 +28,7 @@ def settings(PATH_TO_CONFIG_FILE):
     return prime_service['OSIRIS']
 
 def apply_astrometrynet_client(filename, conf):
+    logger.info("Loading the settings")
     ss = Settings()
     img = CCDData.read(filename, unit='adu')
     #ss.scale_units = 'arcsecperpix'
@@ -42,16 +45,22 @@ def apply_astrometrynet_client(filename, conf):
     ss.allow_commercial_use = 'n'
     ss.allow_modifications = 'n'
     ss.publicly_visible = 'n'
+    logger.info("Settings:")
+    logger.info(f"{ss}")
     #Send the image
     s = Session(api_key=conf["ASTROMETRY"]["No_Session"])
+    logger.info("API connection is ready")
     upl = FileUpload(filename, session=s, settings=ss)
+    logger.info("Frame has been uploaded")
     submission = upl.submit()
+    logger.info("Waiting an answer from API...")
     submission.until_done()
     job = submission.jobs[0]
     job.until_done()
     if job.success():
         wcs = job.wcs_file()
-    print(job.info())
+        logger.info("WCS received from API")
+    logger.info(job.info())
     
     if wcs != None:
         return wcs
@@ -71,6 +80,7 @@ def modify_WCS(best_wcs, PATH_TO_FILE):
     new_frame =  CCDData(data=frame.data, header=frame.header, wcs=best_wcs,
                          unit='adu')
     new_frame.write(PATH_TO_FILE, overwrite=True)
+    logger.info(f"The WCS for {os.path.basename(PATH_TO_FILE)} has been updated")
     return new_frame
 
 def solving_astrometry(PRG, OB, filt, conf, sky, calib_std = False):
@@ -92,8 +102,10 @@ def solving_astrometry(PRG, OB, filt, conf, sky, calib_std = False):
     root_path = conf["DIRECTORIES"]["PATH_DATA"]
 
     if calib_std:
+        logger.info("Astrometry calibration for STD star")
         LST_PATH_TO_FILE = glob.glob(root_path + PRG + '_' + OB + '/reduced/' + f'*std*.fits')
     else:
+        logger.info("Astrometry calibration for science target")
         LST_PATH_TO_FILE = [root_path + PRG + '_' + OB + '/reduced/' + f'aligned_result_{filt}_{sky}.fits']
 
     PATH_TO_FILE = LST_PATH_TO_FILE[0]

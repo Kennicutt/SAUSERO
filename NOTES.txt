@@ -1,0 +1,6 @@
+TODO: I need to check because the new BPM no run.
+
+TODO: Write comments on English
+
+TODO: Create setup files. It should be possible to install in another computers.
+

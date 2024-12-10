@@ -1,0 +1,11 @@
+2024-10-21: Hoy he añadido color al texto que va apareciendo en la terminal. 
+Así como añadir algo más de texto.
+
+2024-10-22: He seguido añadiendo color a los mensajes de texto que se muestran
+en la terminal. Además, he determinado que se deben hacer algunas cosas más como:
+            - Añadir más información sobre lo que se está haciendo en ese momento
+            - Añadir logging
+            - Añadir color
+            - Imprimir en cada punto en pantalla la configuración utilizada.
+
+2024-10-30: 
