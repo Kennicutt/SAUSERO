@@ -27,16 +27,17 @@ from loguru import logger
 
 
 class OsirisAlign:
-    """Esta clase permite alinear las imágenes de ciencia (o de calibración fotométrica si procede).
-    De esta forma podemos sumarlas y así obtener más flujo. Proceso vital para observar cuerpos débiles.
+    """This class allows the alignment of science frames (or photometry calibration frames, if applicable). 
+    Afterward, we can stack them to enhance the measured flux. This step is essential for observing 
+    faint sources.
     """
     
     def __init__(self, program, block, conf):
-        """Inicializamos la clase definiendo parámetros importantes.
+        """We initialize the class by defining important parameters.
 
         Args:
-            program (str): Programa científico a alinear. Cómo incluir cambios
-            block (str): Número del bloque del programa científico.
+            program (str): Science program code
+            block (str): Observational block number assigned to a science program
         """
         self.conf = conf
         self.PATH = self.conf["DIRECTORIES"]["PATH_DATA"]
@@ -49,14 +50,13 @@ class OsirisAlign:
 
 
     def load_frames(self, filt, sky):
-        """Este método pretende obtener una lista de imágenes de ciencia para un filtro
-        determinado.
+        """This method retrieves a list of science frames for each filter.
 
         Args:
-            filt (str): Filtro de interés.
+            filt (str): Filter name
 
         Returns:
-            list: Lista de imágenes científicas para un determinado filtro y su ruta.
+            list: A list of science frames for a given filter and its path
         """
         self.tab = Table(self.ic.summary)
         sub_tab = self.tab[(self.tab['filter2']==filt) & (self.tab['ssky']==sky)]
@@ -72,15 +72,14 @@ class OsirisAlign:
 
 
     def get_each_data(self, filt, sky):
-        """Lee el contenido de una lista que contiene
-        la ruta a una serie de frames y abre estos frames
-        añadiéndolos a una lista nueva.
+        """This methods reads a list containing the paths to several frames 
+        and opens them to add them to a new list.
 
         Args:
-            filt (str): Filtro de interés.
+            filt (str): Filter name
 
         Returns:
-            list: Lista de imágenes de ciencia para un filtro (matrices).
+            list: List of science frames for each filter (matrices)
         """
         ccd = []
         for frame_path in self.load_frames(filt, sky=sky):
@@ -91,15 +90,13 @@ class OsirisAlign:
 
 
     def aligning(self, filt, sky='SKY'): #default: 30
-        """Este método tiene por objetivo alinear las imágenes de ciencia que han sido adquiridas
-        con un mismo filtro.
+        """This method aligns the science frames taken with the same filter.
 
         Args:
-            filt (str): Filtro de interés.
+            filt (str): Filter name
 
         Returns:
-            float: Una imagen que está compuesta por varias imágenes alineadas incrementando el flujo
-            de la misma.
+            float: Stacked image obtained by combining multiple science frames.
         """
         logger.info(f"Creating cube with frames for {filt}")
         cube = self.get_each_data(filt, sky=sky)
@@ -135,11 +132,11 @@ class OsirisAlign:
 
 
 def show_picture(cube, a=1):
-    """Permite visualizar el contenido
+    """This method allows us to show the image.
 
     Args:
-        cube (float): Imagen alineada.
-        a (int, optional): Factor a aplicar. Defaults to 1.
+        cube (float): Stacked image.
+        a (int, optional): Factor applied. Defaults: 1.
     """
     fig = plt.figure(figsize=(15,20))
     ax = fig.add_subplot(1, 1, 1)
@@ -150,13 +147,13 @@ def show_picture(cube, a=1):
     plt.show()
     
 def save_fits(image, header, wcs, fname):
-    """Permite salvar la imagen generada.
+    """This method saves the stacked image.
 
     Args:
-        image (float): Matriz que representa la imagen.
-        header (str): Header para la imagen.
-        wcs (str): WCS para la imagen.
-        fname (str): Nombre a dar a la imagen.
+        image (float): Data to save.
+        header (str): Header for the stacked image.
+        wcs (str): WCS information for the stacked image.
+        fname (str): Name for the stacked image.
     """
     ccd = CCDData(data=image, header=header, wcs=wcs, unit='adu')
     ccd.write(fname, overwrite=True)

@@ -14,6 +14,24 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 """
 
 class bcolors:
+    """
+    A class to define string color formatting for terminal output using ANSI escape sequences.
+
+    This class provides various color codes and text styles that can be used to format terminal output. 
+    The colors and styles are defined as class variables, and each variable represents a different format 
+    that can be applied to text in the terminal.
+
+    Class variables:
+        HEADER (str): Color for header text.
+        OKBLUE (str): Color for informational text (blue).
+        OKCYAN (str): Color for informational text (cyan).
+        OKGREEN (str): Color for successful operation text (green).
+        WARNING (str): Color for warning text (yellow).
+        FAIL (str): Color for error or failed operation text (red).
+        ENDC (str): Resets the text formatting to default.
+        BOLD (str): Bold text style.
+        UNDERLINE (str): Underlined text style.
+    """
     HEADER = '\033[33m'
     OKBLUE = '\033[94m'
     OKCYAN = '\033[96m'

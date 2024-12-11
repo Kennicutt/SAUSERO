@@ -23,15 +23,14 @@ from Color_Codes import bcolors as bcl
 from loguru import logger
 
 def settings(PATH_TO_CONFIG_FILE):
-    """ Esta función abre el archivo que contiene los parámetros
-    de configuración para una adecuada astrometrización de la imagen.
+    """ This method opens the configuration file containing the parameters 
+    needed for optimal astrometrization.
 
     Args:
-        PATH_TO_CONFIG_FILE (str): Ruta al archivo YAML que contiene
-        los valores para cada parámetro.
+        PATH_TO_CONFIG_FILE (str): Path to configuration file.
 
     Returns:
-        dict: Diccionario con el contenido del archivo.
+        dict: Contents of the configuration file.
     """
     try:
         print('Loading settings for astrometrization...')
@@ -43,6 +42,17 @@ def settings(PATH_TO_CONFIG_FILE):
     return prime_service['OSIRIS']
 
 def apply_astrometrynet_client(filename, conf):
+    """This method sends the stacked science frame along with settings information 
+    to the Astrometry.net server through its API. Then, it receives the 
+    WCS estimated by the server.
+
+    Args:
+        filename (str): Name of stacked science frame
+        conf (dict): Collection of setting parameters
+
+    Returns:
+        WCS: WCS information given by the server.
+    """    
     logger.info("Loading the settings")
     ss = Settings()
     img = CCDData.read(filename, unit='adu')
@@ -81,14 +91,14 @@ def apply_astrometrynet_client(filename, conf):
         return wcs
 
 def modify_WCS(best_wcs, PATH_TO_FILE):
-    """Esta función permite modificar WCS de la imagen de ciencia.
+    """This method updates the original WCS with the WCS estimated by the Astrometry.net server.
 
     Args:
-        best_wcs (str): Nuevo WCS.
-        PATH_TO_FILE (str): Ruta a la imagen de ciencia.
+        best_wcs (str): WCS estimated by the Astrometry.net server
+        PATH_TO_FILE (str): Path to science frame
 
     Returns:
-        CCDData: Imagen de ciencia con la nueva solución astrométrica.
+        CCDData: Science frame with its WCS updated.
     """
     frame = CCDData.read(PATH_TO_FILE, unit='adu')
     best_wcs = WCS(best_wcs)
@@ -99,20 +109,17 @@ def modify_WCS(best_wcs, PATH_TO_FILE):
     return new_frame
 
 def solving_astrometry(PRG, OB, filt, conf, sky, calib_std = False):
-    """Esta función permite establecer en qué orden deben efectuarse los diferentes pasos
-    para obtener la solución astrométrica.
-
-    UPDATE (2024-01-15): Se añade líneas para calibrar la STD mejor.
+    """This method handles the procedure for obtaining the astrometry solution from the server.
 
     Args:
-        PRG (str): Programa científico a observar.
-        OB (str): Número del programa científico.
-        filt (str): Filtro de interés.
+        PRG (str): Science program code
+        OB (str): Observational block number assigned to a science program
+        filt (str): Filter name
 
     Returns:
-        WCS, list, CCDData: Como resultado obtenemos la nueva WCS, una lista que contiene
-        la posición de las estrellas en función de su nuevo WCS y la imagen de ciencia
-        astrometrizada.
+        WCS, list, CCDData: Several results: the new WCS, a local catalogue for 
+        the FoV using the new WCS to estimate positions, and the science frame 
+        with its WCS updated.
     """
     root_path = conf["DIRECTORIES"]["PATH_DATA"]
 

@@ -32,9 +32,9 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 # Parse configuration
 parser = argparse.ArgumentParser(
                      prog = 'OsirisDRP',
-                     description = 'This software reduces the observations carried out by OSIRIS \
-                         in BBI mode. It can reduce any filter configuration and it can be used \
-                         with observation afected by fringing (Sloan_z).')
+                     description = 'This software reduces observations taken with OSIRIS\
+                        in BBI mode. It can process any filter configuration and is suitable\
+                        for observations affected by fringing (Sloan_z).')
 
 parser.add_argument('-pr','--program', help='Select the GTC program.',
                      required=True, type=str)
@@ -51,18 +51,17 @@ def readJSON():
     return json.load(open("configuration.json"))
 
 def Results(PATH, ZP, eZP, MASK, filt, ext_info = extinction_dict):
-    """ Esta función añade información relevante a la imagen de ciencia
-    que se va a entregar al PI. Esta información consiste en la magnitud
-    instrumental para el filtro empleado y su error, las unidades empleadas,
-    el valor de la extinción utilizado y su error, dividir la imagen por
-    el tiempo de exposición y aplicar la máscara.
+    """ This function adds relevant information to the science image that will be 
+    delivered to the PI.This information includes the instrumental magnitude for 
+    the used filter and its error, the units used, the extinction value applied and 
+    its error, dividing the image by the exposure time, and applying the mask.
 
     Args:
-        PATH (string): Directorio que contiene los resultados preliminares.
-        ZP (float): La magnitud instrumental estimada para el filtro.
-        eZP (float): El error de la magnitud instrumental.
-        MASK (bool): Máscara de píxeles malos.
-        filt (string): Filtro empleado para la adquisición de las imágenes.
+        PATH (string): Directory containing the preliminary results.
+        ZP (float): The estimated instrumental magnitude for the filter.
+        eZP (float):  The error of the instrumental magnitude.
+        MASK (bool): Mask of bad pixels.
+        filt (string): Filter used for the image acquisition.
     """
     ic = ccdp.ImageFileCollection(PATH, keywords='*', glob_include='ast*')
     for sky in ['SKY', 'NOSKY']:
@@ -108,11 +107,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.")
     print("\n")
     print(f"{bcl.BOLD}************************ IMPORTANT INFORMATION ************************{bcl.ENDC}")
     print("\n")
-    print(f"This software is to reduce Broad Band Imaging observation obtained with OSIRIS+.\n\
-For its correct uses, you need to modify the configuration file that you can find\n\
-in the directory where this software have installed. Additionally, you need to create\n\
-an account in Astrometry.net. Once you have the code that you allow to use the API,\n\
-you need fill the correct variable. ")
+    print(f"This software is designed to reduce Broad Band Imaging observations obtained with OSIRIS+.\n\
+For proper use, you need to modify the configuration file, which can be found\n\
+in the directory where this software is installed. Additionally, you need to create\n\
+an account on Astrometry.net. Once you have the code that allows you to use the API,\n\
+you need to fill in the correct variable.")
     print(f"\n")
 
     PRG = args.program
@@ -124,9 +123,9 @@ you need fill the correct variable. ")
 
     conf = readJSON()
     
-    #Reduction Recipe. Esta receta se encarga de efectuar la limpieza de la imágenes
-    #haciendo una sustracción del masterbias y dividiendo por el masterflat normalizado.
-    #Posteriormente se salvan las imágenes ya limpias.
+    #Reduction Recipe. This recipe is responsible for cleaning the images by subtracting 
+    #the masterbias and dividing by the normalized masterflat.
+    #Subsequently, the cleaned images are saved.
     logger.info(f'{bcl.HEADER}---------- Starting the reduction ----------{bcl.ENDC}')
     o = Reduction(PRG, OB, main_path=conf['DIRECTORIES']['PATH_DATA'],
                 path_mask=conf['DIRECTORIES']['PATH_BPM'])
@@ -150,8 +149,8 @@ you need fill the correct variable. ")
     logger.info(f'{bcl.HEADER}¡¡¡¡¡¡¡ Finished the reduction successfully !!!!!!!{bcl.ENDC}')
     print(2*"\n")
     
-    #Aligned Recipe. Las imágenes de ciencia limpias son alineadas en función del
-    #filtro empleado en cada caso. Luego se salva como imagen alienada.
+    #Aligned Recipe. The cleaned science images are aligned based on the filter used in each case. 
+    #Then, they are saved as aligned images.
     logger.info(f"{bcl.HEADER}---------- Starting the alignment ----------{bcl.ENDC}")
     al = OsirisAlign(PRG, OB, conf)
     for filt in list(set(al.ic.summary['filtro'])):
@@ -171,9 +170,8 @@ you need fill the correct variable. ")
     print(f'{bcl.HEADER}¡¡¡¡¡¡¡ El alineado para cada filtro finalizado !!!!!!!{bcl.ENDC}')
     print(2*"\n")
 
-    #Astrometry Recipe. La imagen alineada para cada filtro se aplica un proceso de
-    #astrometrización de la imagen, para determinar con precisión la posición real
-    #de los cuerpos celestes presentes en la escena.
+     #Astrometry Recipe. The aligned image for each filter undergoes an astrometric process to 
+     #accurately determine the real positions of the celestial bodies present in the scene.
     logger.info(f"{bcl.HEADER}---------- Start the astrometrization ----------{bcl.ENDC}")
     del filt
     ic_ast = ccdp.ImageFileCollection(al.PATH_REDUCED, keywords='*', glob_include='ali*', glob_exclude='*NOSKY*')
@@ -206,11 +204,10 @@ you need fill the correct variable. ")
     print(2*"\n")
 
 
-    #Photometry Recipe. A partir de la estrella de calibración, se estima la magnitud
-    #instrumental. De este modo, podemos estimar posteriormente la magnitud aparente
-    #de los cuerpos celestes presentes en la imagen de ciencia. Este proceso se hace
-    # por cada filtro empleado. Además, la función Results() permite incluir esta
-    #información en el header de la imagen de ciencia limpia, alineada y astrometrizada.
+    #Photometry Recipe. The instrumental magnitude is estimated from the calibration star. This allows us 
+    # to later estimate the apparent magnitude of the celestial bodies present in the science image. 
+    # This process is done for each filter used. Additionally, the Results() function allows including 
+    # this information in the header of the cleaned, aligned, and astrometrically processed science image.
     logger.info(f"{bcl.HEADER}---------- Starting the estimation of ZeroPoint ----------{bcl.ENDC}")
     del filt
     ic_pho = ccdp.ImageFileCollection(al.PATH_REDUCED, keywords='*', glob_include='red*')

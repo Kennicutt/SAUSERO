@@ -34,7 +34,33 @@ from loguru import logger
 
 import logging, inspect
 class InterceptHandler(logging.Handler):
+    """Custom logging handler that redirects log records from the standard logging module 
+    to the Loguru logger.
+
+    This handler allows the use of Loguru alongside the standard logging module, ensuring 
+    that logs captured by the standard logging system are properly forwarded to the Loguru logger.
+
+    Args:
+        logging (module): The logging module that provides the log records to be captured 
+                           and forwarded to Loguru. Typically, this would be the standard 
+                           `logging` module.
+    """
     def emit(self, record: logging.LogRecord) -> None:
+        """
+        Process a log record and forward it to the Loguru logger, mapping the log level and 
+        determining the caller's origin for the log message.
+
+        This method retrieves the log level, the caller's information, and the log message 
+        before passing it to Loguru for proper logging.
+
+        Args:
+            record (logging.LogRecord): The log record to be processed, which contains 
+                                        information about the log level, message, and other 
+                                        relevant details for the log entry.
+
+        This method will convert the logging level to a corresponding Loguru level and 
+        propagate the message along with the exception information (if any) to the Loguru logger.
+        """
         # Get corresponding Loguru level if it exists.
         level: str | int
         try:
@@ -48,7 +74,6 @@ class InterceptHandler(logging.Handler):
             frame = frame.f_back
             depth += 1
 
-        #print(f"IMPRIMIENDO LEVEL: {level}")
         if level != "DEBUG":
             logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
 
@@ -95,16 +120,16 @@ logging.basicConfig(handlers=[InterceptHandler()], level=logging.INFO, force=Fal
 #logging.getLogger("astropy").setLevel("INFO")
 
 class Reduction:
-    """The aim is to carry out the cleaning procedure for science and photometric calibration frames. 
-    First, bias frames are averaged to obtain a master bias. Next, the master bias is used to subtract 
-    the offset level from the sky flat. The sky flats are then combined and divided by their median to 
-    normalize them. The final product is a master flat, which will be used to homogenize the sensor's 
-    response. Finally, the science and photometric calibration frames are subtracted by the masterbias 
-    and divided by the masterflat, resulting in the final reduced frames.
+    """The goal is to perform the cleaning procedure for science and photometric calibration frames. 
+    First, bias frames are averaged to create a master bias. This master bias is then used to subtract 
+    the offset level from the sky flat. The sky flats are subsequently combined and divided by their 
+    median to normalize them. The final product is a master flat, which will be used to standardize 
+    the sensor's response. Finally, the science and photometric calibration frames are corrected by 
+    subtracting the master bias and dividing by the master flat, resulting in the final reduced frames.
     """
 
     def __init__(self, gtcprgid, gtcobid, main_path, path_mask = None):
-        """Object initialization to carry on the reduction.
+        """Object initialization to carry out the reduction.
 
         Args:
             gtcprgid (str): Observation program code.
@@ -117,7 +142,7 @@ class Reduction:
         self.gtcobid = gtcobid
         ROOT = main_path
 
-        # The path that contains the raw images is defined
+        # The path containing the raw images is defined
         self.PATH = Path(ROOT + str(gtcprgid) + '_' + str(gtcobid) + '/' + 'raw/')
         if os.path.exists(self.PATH):
             logger.info("Path to raw data exists")
@@ -134,7 +159,7 @@ class Reduction:
             logger.critical(f"Path to reduced directory has NOT been created")
             sys.exit()
 
-        # Define the route to mask file
+        # Define the path to mask file
         self.path_mask = Path(path_mask)
         if os.path.exists(self.path_mask):
             logger.info("Path to mask file exists")
@@ -142,7 +167,7 @@ class Reduction:
             logger.critical(f"Path to mask file does NOT exist")
             sys.exit()
         
-        # The information about the frames located in that directory is gathered.
+        # The information about the frames in that directory is gathered.
         self.ic = ccdp.ImageFileCollection(self.PATH)
         if len(self.ic.summary) != 0:
             logger.info("Data collection is ready")
@@ -168,13 +193,13 @@ class Reduction:
 
     @staticmethod
     def configure_mask(mask):
-        """Static method to reshape the BPM array to any frame shape.
+        """Static method to reshape the BPM array to match any frame shape.
 
         Args:
             mask (int): BPM HDU or CCDData Object
 
         Returns:
-            bool: BPM array in booleans to apply over the frames.
+            bool: BPM array in boolean format to apply over the frames.
         """
         mask = mask.data.astype(bool)
         matrix = np.ones(mask.shape)
@@ -187,17 +212,16 @@ class Reduction:
 
     @staticmethod
     def get_each_data(data_dict, value):
-        """Reads the content of a dictionary that contains the path 
-        to a series of frames and opens these frames, adding them to 
-        a list.
+        """Reads the contents of a dictionary containing the paths to a series of 
+        frames and opens them, adding them to a list.
 
         Args:
-            data_dict (dict): Dictionary that contains the paths to 
-            one or more frames contained in a list.
+            data_dict (dict): A dictionary containing the paths to 
+            one or more frames in a list.
             value (str): Key to access the list of paths.
 
         Returns:
-            list: It is a list that contains the images.
+            list: It is a list containing the images.
         """
         ccd = []
         for frame_path in data_dict[value]:
@@ -211,15 +235,14 @@ class Reduction:
 
     @staticmethod
     def combining(lst_frames):
-        """This static method combines the images contained in a list
-          to obtain an averaged image. The strategy involves creating 
-          a data cube and averaging them.
+        """This static method combines the images in a list to obtain an averaged image. 
+        The process involves creating a data cube and averaging the images.
 
         Args:
-            lst_frames (list): List of images to average.
+            lst_frames (list): List of images to be averaged.
 
         Returns:
-            image: Create an averaged matrix from data cube.
+            image: Create an averaged matrix from a data cube.
         """
         cube = np.dstack(lst_frames)
         cube.sort(axis=2)
@@ -229,7 +252,7 @@ class Reduction:
 
 
     def create_cubes(self, key):
-        """Create a data cube from an images list.
+        """Create a data cube from a list of images.
 
         Args:
             key (str): Key of the scientific images dictionary.
@@ -243,10 +266,8 @@ class Reduction:
 
 
 
-
-
     def sustractMasterBias(self, value, master, data_dict):
-        """Sustracción del masterbias a una imagen.
+        """Subtract the master bias from the image.
 
         Args:
             value (str): Key that allows access to the images in 
@@ -255,7 +276,7 @@ class Reduction:
             data_dict (dict): Images dictionary. 
 
         Returns:
-            list: Frames list with masterbias applied.
+            list: List of the frames with masterbias applied.
         """
         ccd = self.get_each_data(data_dict, value)
 
@@ -268,14 +289,12 @@ class Reduction:
 
 
 
-
-
     def clean_target(self, *args):
         """Applies the subtraction of the MasterBias and the division 
         by the normalized MasterFlat to the science images.
 
         Returns:
-            list: Cleaned science frame list
+            list: List of cleaned science frames.
         """
         value, masterbias, masterflat = args
         ccd = self.get_each_data(self.DATA_DICT, value)
@@ -285,10 +304,9 @@ class Reduction:
 
 
     def get_imagetypes(self):
-        """ This method aims to establish all the types of images 
-        present in the original images directory and their corresponding 
-        filters used. To do this, it creates an empty dictionary where 
-        each key consists of the type of image and the filter used.
+        """ This method aims to identify all the types of images present in the original images 
+        directory and their corresponding filters. To achieve this, it creates an empty dictionary 
+        where each key is a combination of the image type and the filter used.
         """
         logger.info('Getting types of images and filters used.')
         self.filt_wheels = []
@@ -317,7 +335,7 @@ class Reduction:
 
     def load_BPM(self):
         """
-        This method opens the FITS file that contains the BPM.
+        This method opens the FITS file containing the BPM.
         """
         bpm = CCDData.read(self.path_mask, unit=u.dimensionless_unscaled,
                             hdu=1)
@@ -331,9 +349,8 @@ class Reduction:
 
 
     def load_results(self):
-        """It generates a table of specific content in the results 
-        directory, specifically for those scientific images that 
-        have already been cleaned.
+        """It generates a table with specific content in the results directory, specifically for 
+        those scientific images that have already been cleaned.
         """
         self.ic_r = ccdp.ImageFileCollection(self.PATH_RESULTS, keywords='*',
                                              glob_include='red*')
@@ -343,8 +360,7 @@ class Reduction:
 
 
     def sort_down_drawer(self):
-        """This method is responsible for storing the images based on 
-        their type and filter in the previously created dictionary.
+        """This method is responsible for storing the images by their type and filter in the previously created dictionary.
         """
         for filt in self.filt_wheels:
             for elem in list(self.DATA_DICT.keys()):
@@ -371,7 +387,7 @@ class Reduction:
 
     def do_masterbias(self):
         """
-        This method allows to create the masterbias frame.
+        This method creates the master bias frame.
         """
         bias = self.get_each_data(self.DATA_DICT, "bias")
 
@@ -384,7 +400,7 @@ class Reduction:
 
     def do_masterflat(self):
         """
-        This method create the masterflat frame for each filter.
+        This method creates the master flat frame for each filter.
         """
         lst_flat = [elem for elem in list(self.DATA_DICT.keys()) if 'flat' in elem]
         for filt in lst_flat:
@@ -400,7 +416,7 @@ class Reduction:
     def get_std(self, no_CRs=False, contrast_arg = 1.5, cr_threshold_arg = 5.,
                 neighbor_threshold_arg = 5. ):
         """
-        This method cleans the photometric calibration frames.
+        This method processes the photometric calibration frames.
         """
         lst_std = [elem for elem in list(self.DATA_DICT.keys()) if 'std' in elem]
         logger.info("Processing photometric calibration frames.")
@@ -457,8 +473,7 @@ class Reduction:
 
     def remove_fringing(self):
         """
-        This method allows performing a special cleaning when using Sloan_z
-        to remove the interference pattern.
+        This method performs a special cleaning when using Sloan_z to remove the interference pattern.
         """
         lst_results = [elem for elem in list(self.DATA_DICT.keys())]
         if 'Sloan_z' in lst_results:
@@ -475,7 +490,7 @@ class Reduction:
     
     def sustract_sky(self):
         """
-        This method proceeds to subtract the contribution of the sky background.
+        This method subtracts the contribution of the sky background.
         """
         lst_target_keys = [elem for elem in list(self.target_dict.keys())]
         logger.info(f"Substracting sky background.")
@@ -505,18 +520,16 @@ class Reduction:
 
 
     def save_target(self, fringing=False, std=False, sky=False):
-        """This method allows saving the images generated during the 
-        cleaning process. Additionally, it adds information to the 
-        header that will assist in future processes.
+        """This method saves the images generated during the cleaning process and 
+        adds information to the header to assist in future processes.
 
         Args:
-            fringing (bool, optional): To indicate whether interference 
+            fringing (bool, optional): Indicates whether the interference 
             pattern correction has been performed. Defaults to False.
-            std (bool, optional): Indicate whether the image(s) to be 
-            saved are photometric calibration star images. Defaults 
-            to False.
-            sky (bool, optional):Indicate whether the science image(s)
-            to be saved have sky or not. Defaults to False.
+            std (bool, optional): Indicates whether the image(s) to be
+            saved are photometric calibration star images. Defaults to False.
+            sky (bool, optional): Indicates whether the science image(s) to 
+            be saved contain sky or not. Defaults to False.
         """
         if not std:
             logger.info("Saving photometric calibration frames reduced.")
