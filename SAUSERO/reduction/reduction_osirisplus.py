@@ -48,6 +48,7 @@ class InterceptHandler(logging.Handler):
                            and forwarded to Loguru. Typically, this would be the standard 
                            `logging` module.
     """
+    
     def emit(self, record: logging.LogRecord) -> None:
         """
         Process a log record and forward it to the Loguru logger, mapping the log level and 
@@ -81,46 +82,6 @@ class InterceptHandler(logging.Handler):
             logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
 
 logging.basicConfig(handlers=[InterceptHandler()], level=logging.INFO, force=False)
-#
-#logging.getLogger("lacosmic.core")
-
-#import logging
-#from loguru import logger
-#import inspect
-#
-## Configuración de Loguru
-#logger.remove()
-#logger.add("sausero.log", format="{time} {level} {message} ({module}:{line})", level="INFO",
-#            filter=lambda record: 'astropy' not in record["name"])
-#
-#class InterceptHandler(logging.Handler):
-#    def emit(self, record: logging.LogRecord) -> None:
-#        # Obtener el nivel correspondiente en Loguru si existe
-#        level = record.levelname
-#        try:
-#            # Verificar si el nivel existe en Loguru
-#            level = logger.level(record.levelname).name
-#        except ValueError:
-#            # Si no existe, usamos el nivel numérico estándar
-#            level = record.levelno
-#
-#        # Encontrar el origen del log (archivo y línea)
-#        frame, depth = inspect.currentframe(), 0
-#        while frame and (depth == 0 or frame.f_code.co_filename == logging.__file__):
-#            frame = frame.f_back
-#            depth += 1
-#
-#        # Enviar el mensaje de log a Loguru
-#        logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
-#
-## Configura el manejador de logs estándar para que redirija a loguru
-#logging.basicConfig(handlers=[InterceptHandler()], level=0, force=True)
-#
-### Configuración de Loguru
-##logger.add("sausero.log", format="{time} {level} {message} ({module}:{line})", level="INFO",
-##            filter=lambda record: 'astropy' not in record["name"])
-#
-#logging.getLogger("astropy").setLevel("INFO")
 
 class Reduction:
     """The goal is to perform the cleaning procedure for science and photometric calibration frames. 

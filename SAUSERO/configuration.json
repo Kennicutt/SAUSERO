@@ -1,7 +1,7 @@
 {
     "DIRECTORIES":{
         "PATH_SOFTWARE":"/home/fabricio.perez/Core/Proyectos/SAUSERO/SAUSERO/",
-        "PATH_DATA": "/home/fabricio.perez/Core/Proyectos/SAUSERO/SAUSERO/FRAMES/",
+        "PATH_DATA": "/home/fabricio.perez/Frames/",
         "PATH_BPM":"/home/fabricio.perez/Core/Proyectos/SAUSERO/SAUSERO/BPM/BPM_OSIRIS_CMS_sig5.fits"
     },
 

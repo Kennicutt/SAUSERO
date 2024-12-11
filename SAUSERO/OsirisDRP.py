@@ -125,17 +125,17 @@ you need to fill in the correct variable.")
     OB = args.block
 
     hora_local = time.localtime()
-    logger.add(f"FRAMES/{PRG}_{OB}/sausero_{time.strftime('%Y-%m-%d_%H:%M:%S', hora_local)}.log", format="{time} {level} {message} ({module}:{line})", level="INFO",
-               filter=lambda record: 'astropy' not in record["name"])
-
     conf = readJSON()
+
+    logger.add(f"{conf['DIRECTORIES']['PATH_DATA']}{PRG}_{OB}/sausero_{time.strftime('%Y-%m-%d_%H:%M:%S', hora_local)}.log", format="{time} {level} {message} ({module}:{line})", level="INFO",
+               filter=lambda record: 'astropy' not in record["name"])
     
     #Reduction Recipe. This recipe is responsible for cleaning the images by subtracting 
     #the masterbias and dividing by the normalized masterflat.
     #Subsequently, the cleaned images are saved.
     logger.info(f'{bcl.HEADER}---------- Starting the reduction ----------{bcl.ENDC}')
     o = Reduction(PRG, OB, main_path=conf['DIRECTORIES']['PATH_DATA'],
-                path_mask=conf['DIRECTORIES']['PATH_BPM'])
+                path_mask="BPM/BPM_OSIRIS_PLUS.fits")
     o.get_imagetypes()
     o.load_BPM()
     o.sort_down_drawer()
