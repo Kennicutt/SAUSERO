@@ -11,6 +11,9 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+Copyright (C) 2024 Gran Telescopio Canarias <https://www.gtc.iac.es>
+Fabricio Manuel Pérez Toledo <fabricio.perez@gtc.iac.es>
 """
 
 import os, sys, time, json, logging

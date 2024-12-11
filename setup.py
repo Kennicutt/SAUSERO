@@ -11,6 +11,9 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+Copyright (C) 2024 Gran Telescopio Canarias <https://www.gtc.iac.es>
+Fabricio Manuel Pérez Toledo <fabricio.perez@gtc.iac.es>
 """
 
 from setuptools import setup, find_packages
@@ -39,13 +42,13 @@ setup(
     },
     author="Fabricio M. Pérez-Toledo",
     author_email="fabricio.telescope@gmail.com",
-    description="Descripción de tu proyecto",
+    description="This software is designed to reduce Broad Band Imaging observations obtained with OSIRIS+.",
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
     url="https://github.com/Kennicutt/SAUSERO",
     classifiers=[
         "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: MIT License",
+        "License :: OSI Approved :: GPL License",
         "Operating System :: OS Independent",
     ],
     python_requires='>=3.11',

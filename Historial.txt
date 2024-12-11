@@ -17,8 +17,8 @@ pendientes son:
             - Modificar cualquier comentario que se muestre en terminal que no parezca correcto
             o que requiera ser más claro. OK
             - Traducir al inglés cualquier comentario y añadir más comentarios al código. OK
-            - Crear un módulo de testeo del funcionamiento del código.
-            - Actualizar de nuevo el contenido del repositorio.
+            - Crear un módulo de testeo del funcionamiento del código. Cancelado. Quizás en una futura versión.
+            - Actualizar de nuevo el contenido del repositorio. OK
             - Crear su ejecutable para ser instalado en otras máquinas.
             - Instalar otra versión adicional en Phase3 desde el ejecutable.
             - Comunicar a Antonio que el ejecutable está listo para su distribución.
