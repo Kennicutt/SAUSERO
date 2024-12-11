@@ -8,4 +8,6 @@ en la terminal. Además, he determinado que se deben hacer algunas cosas más co
             - Añadir color
             - Imprimir en cada punto en pantalla la configuración utilizada.
 
-2024-10-30: 
+2024-12-10: Hoy he terminado de añadir el logging. Habría que perfilar algunas cosas.
+Lo dejaré para otro día. Ahora me preocupan más otros aspectos como traducir los comentarios
+o convertir el proyecto en algo instalable en otro ordenador.
