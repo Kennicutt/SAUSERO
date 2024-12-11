@@ -111,7 +111,7 @@ class Reduction:
             gtcobid (str): Observation block code.
             path_mask (str, optional): Path to BPM.
         """
-        logger.info(f'Initializing the reduction for {bcl.BOLD}{gtcprgid}_{gtcobid}{bcl.ENDC}.')
+        logger.info(f'Initializing the reduction for {gtcprgid}_{gtcobid}.')
         
         self.gtcprgid = gtcprgid
         self.gtcobid = gtcobid
@@ -122,7 +122,7 @@ class Reduction:
         if os.path.exists(self.PATH):
             logger.info("Path to raw data exists")
         else:
-            logger.critical(f"Path to raw data does {bcl.BOLD}NOT{bcl.ENDC} exist")
+            logger.critical(f"Path to raw data does NOT exist")
             sys.exit()
 
         # The directory that will contain the intermediate and processed images is defined
@@ -131,7 +131,7 @@ class Reduction:
         if os.path.exists(self.PATH_RESULTS):
             logger.info("Path to reduced directory has been created")
         else:
-            logger.critical(f"Path to reduced directory has {bcl.BOLD}NOT{bcl.ENDC} been created")
+            logger.critical(f"Path to reduced directory has NOT been created")
             sys.exit()
 
         # Define the route to mask file
@@ -139,7 +139,7 @@ class Reduction:
         if os.path.exists(self.path_mask):
             logger.info("Path to mask file exists")
         else:
-            logger.critical(f"Path to mask file does {bcl.BOLD}NOT{bcl.ENDC} exist")
+            logger.critical(f"Path to mask file does NOT exist")
             sys.exit()
         
         # The information about the frames located in that directory is gathered.
@@ -147,7 +147,7 @@ class Reduction:
         if len(self.ic.summary) != 0:
             logger.info("Data collection is ready")
         else:
-            logger.critical(f"{bcl.BOLD}NOT files to reduce {bcl.ENDC}")
+            logger.critical(f"NOT files to reduce")
             sys.exit()
 
         # Define dictionaries
@@ -204,7 +204,7 @@ class Reduction:
             hdul = fits.open(frame_path)
             ccd.append(hdul[0].data[230:2026,28:2060]) #TRIM SECTION
             
-        logger.info(f"List of images for key {bcl.BOLD}{value}{bcl.ENDC} is ready.")
+        logger.info(f"List of images for key {value} is ready.")
         return ccd
 
 
@@ -261,7 +261,7 @@ class Reduction:
 
         frames = [fr - master for fr in ccd]
 
-        logger.info(f"Masterbias applied to key {bcl.BOLD}{value}{bcl.ENDC} set.")
+        logger.info(f"Masterbias applied to key {value} set.")
         
         return frames
 
@@ -393,8 +393,7 @@ class Reduction:
             median = np.nanmedian(combflat)
             masterflat = combflat/median
             self.master_dict[filt] = masterflat
-            logger.info(f"Masterflat has been created for {bcl.BOLD}{filt}\
-                        {bcl.ENDC} filter.")
+            logger.info(f"Masterflat has been created for {filt} filter.")
 
 
 
@@ -413,8 +412,7 @@ class Reduction:
             lst_sd = []
             for sd in std:
                 if no_CRs:
-                    logger.info(f"Removing CRs to photometric calibration \
-                                frame for {value}.")
+                    logger.info(f"Removing CRs to photometric calibration frame for {value}.")
                     no_mask = np.nan_to_num(sd, nan=np.nanmedian(sd))
                     lst_sd.append(lacosmic.lacosmic(no_mask, contrast=contrast_arg,
                                                     cr_threshold=cr_threshold_arg,
@@ -422,8 +420,7 @@ class Reduction:
                                                     effective_gain=1.9,
                                                     readnoise=4.3)[0])
                 else:
-                    logger.info(f"NOT treatment for CRs applied to photometric calibration \
-                                frame for {value}.")
+                    logger.info(f"NOT treatment for CRs applied to photometric calibration frame for {value}.")
                     lst_sd.append(np.nan_to_num(sd, nan=np.nanmedian(sd)))
             self.std_dict[elem] = lst_sd
 
@@ -577,8 +574,6 @@ class Reduction:
                 hdul = fits.HDUList([primary_hdu])
 
                 filename = os.path.basename(fnames[i])
-                logger.info(f"Storing the frame: {bcl.BOLD}reduced_5sig_{adjetive}_\
-                            {sky_status}_{filename}{bcl.ENDC} for {bcl.BOLD}\
-                                    {hd['FILTER2']}{bcl.ENDC}")
+                logger.info(f"Storing the frame: reduced_5sig_{adjetive}_{sky_status}_{filename} for {hd['FILTER2']}")
                 hdul.writeto(str(self.PATH_RESULTS / (f'reduced_5sig_{adjetive}_{sky_status}_' + filename)),
                             overwrite=True)

@@ -26,55 +26,8 @@ import os, json, warnings
 from Color_Codes import bcolors as bcl
 from loguru import logger
 
-
-#logging.getLogger("astropy").setLevel(logging.INFO)
-
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=RuntimeWarning)
-
-############## General Configurations ##############
-
-# Logging configuration
-
-# Crear un filtro personalizado para ocultar mensajes que contienen ciertas palabras
-#class OcultarMensajes(logging.Filter):
-#    def filter(self, record):
-#        # Ocultar mensajes que contienen la palabra 'ocultar'
-#        if 'INFO:' in record.getMessage():
-#            return False
-#        return True
-
-#logger = logging.getLogger("main_logger")
-#logger.setLevel(logging.INFO)  # Establecer el nivel general a DEBUG
-#
-#logger.handlers = [h for h in logger.handlers if not isinstance(h, logging.StreamHandler)]
-#
-#if not logger.hasHandlers():
-#    # Crear un manejador para escribir en un archivo
-#    file_handler = logging.FileHandler('sausero.log', mode='w')
-#    file_handler.setLevel(logging.INFO)  # Guardar todos los mensajes en el archivo
-#
-#    # Crear un manejador para la consola
-#    console_handler = logging.StreamHandler()
-#    console_handler.setLevel(logging.INFO)  # Mostrar INFO y niveles superiores en la consola
-#
-#    # Crear un formato para los mensajes
-#    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(module)s - %(funcName)s - %(message)s')
-#    file_handler.setFormatter(formatter)
-#    console_handler.setFormatter(formatter)
-#
-#    # Agregar el filtro personalizado al manejador de la consola (o al logger en general)
-#    console_handler.addFilter(OcultarMensajes())
-#
-#    # Agregar los manejadores al logger
-#    #if not logger.hasHandlers():
-#    logger.addHandler(file_handler)
-#    logger.addHandler(console_handler)
-#
-#
-#logging.getLogger('ccdproc').setLevel(logging.ERROR)
-#logging.getLogger('lacosmic').setLevel(logging.ERROR)
-#logging.getLogger('astropy').setLevel(logging.ERROR)
 
 # Parse configuration
 parser = argparse.ArgumentParser(
@@ -115,7 +68,7 @@ def Results(PATH, ZP, eZP, MASK, filt, ext_info = extinction_dict):
     for sky in ['SKY', 'NOSKY']:
         fname = ic.files_filtered(include_path=True, filtro=filt, ssky=sky)[0]
         frame = CCDData.read(fname, unit='adu')
-        logger.info(f'Load science image: {bcl.BOLD}{os.path.basename(fname)}{bcl.ENDC}')
+        logger.info(f'Load science image: {os.path.basename(fname)}')
         hd = frame.header
         hd['ZP'] = (ZP, 'ZeroPoint estimation')
         hd['eZP'] = (eZP, 'Error ZeroPoint estimation')
@@ -131,7 +84,7 @@ def Results(PATH, ZP, eZP, MASK, filt, ext_info = extinction_dict):
         frame.data = (frame.data / hd['EXPTIME'])
         frame.write(PATH / f"{hd['GTCPRGID']}_{hd['GTCOBID']}_{filt}_{(hd['DATE'].split('T')[0]).replace('-','')}_{sky}_BBI.fits",
                     overwrite=True)
-        logger.info(f"Frame generated: {bcl.BOLD}{hd['GTCPRGID']}_{hd['GTCOBID']}_{filt}_{(hd['DATE'].split('T')[0]).replace('-','')}_{sky}_BBI.fits{bcl.ENDC}")
+        logger.info(f"Frame generated: {hd['GTCPRGID']}_{hd['GTCOBID']}_{filt}_{(hd['DATE'].split('T')[0]).replace('-','')}_{sky}_BBI.fits")
     
 
 if __name__ == '__main__':
@@ -139,6 +92,19 @@ if __name__ == '__main__':
     print(f"{bcl.OKBLUE}***********************************************************************{bcl.ENDC}")
     print(f"{bcl.OKBLUE}************************* WELCOME TO SAUSERO **************************{bcl.ENDC}")
     print(f"{bcl.OKBLUE}***********************************************************************{bcl.ENDC}")
+    print("\n")
+    print(f"{bcl.BOLD}---------------------- LICENSE ----------------------{bcl.ENDC}")
+    print("\n")
+    print(f"This program is free software: you can redistribute it and/or modify\n\
+it under the terms of the GNU General Public License as published by\n\
+the Free Software Foundation, either version 3 of the License, or\n\
+(at your option) any later version.\n\n\
+This program is distributed in the hope that it will be useful,\n\
+but WITHOUT ANY WARRANTY; without even the implied warranty of\n\
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the\n\
+GNU General Public License for more details.\n\n\
+You should have received a copy of the GNU General Public License\n\
+along with this program. If not, see <https://www.gnu.org/licenses/>.")
     print("\n")
     print(f"{bcl.BOLD}************************ IMPORTANT INFORMATION ************************{bcl.ENDC}")
     print("\n")
@@ -190,19 +156,19 @@ you need fill the correct variable. ")
     al = OsirisAlign(PRG, OB, conf)
     for filt in list(set(al.ic.summary['filtro'])):
         for sky in ['SKY', 'NOSKY']:
-            logger.info(f'{bcl.WARNING}++++++++++ Aligment for {filt} & {sky}{bcl.ENDC} ++++++++++')
+            logger.info(f'{bcl.WARNING}++++++++++ Aligment for {filt} & {sky} ++++++++++{bcl.ENDC}')
             align = al.aligning(filt, sky=sky)
             lst = al.load_frames(filt, sky=sky)
             fr = CCDData.read(lst[0], unit='adu')
             header = fr.header
             header['exptime'] = al.total_exptime * (al.num + 1.)
-            logger.info(f"Total exposure time estimated: {bcl.BOLD}{header['exptime']} sg{bcl.ENDC}")
+            logger.info(f"Total exposure time estimated: {header['exptime']} sg")
             wcs = fr.wcs
             logger.info(f"Update the WCS information")
             save_fits(align, header, wcs, al.PATH_REDUCED / f'aligned_result_{filt}_{sky}.fits')
             print(f'{bcl.HEADER}¡¡¡¡¡¡¡ Alineado para {filt} & {sky} realizado exitosamente !!!!!!!{bcl.ENDC}')
 
-    print('{bcl.HEADER}¡¡¡¡¡¡¡ El alineado para cada filtro finalizado !!!!!!!{bcl.ENDC}')
+    print(f'{bcl.HEADER}¡¡¡¡¡¡¡ El alineado para cada filtro finalizado !!!!!!!{bcl.ENDC}')
     print(2*"\n")
 
     #Astrometry Recipe. La imagen alineada para cada filtro se aplica un proceso de

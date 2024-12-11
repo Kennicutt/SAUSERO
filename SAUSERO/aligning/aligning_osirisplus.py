@@ -63,7 +63,7 @@ class OsirisAlign:
         logger.info(f"Looking for frames with {filt} and {sky}")
         logger.info(f"{sub_tab}")
         self.total_exptime = sub_tab['exptime'].value.data[0]
-        logger.info(f"Exposure time per frame: {bcl.BOLD}{self.total_exptime} sg{bcl.ENDC}")
+        logger.info(f"Exposure time per frame: {self.total_exptime} sg")
         return self.ic.files_filtered(imgtype="SCIENCE",
                                       filtro=filt,
                                       ssky = sky,
@@ -106,7 +106,7 @@ class OsirisAlign:
         REF = cube[0]
 
         self.num=0
-        logger.info(f"Number of frames in cube is: {bcl.BOLD}{len(cube)}{bcl.ENDC}")
+        logger.info(f"Number of frames in cube is: {len(cube)}")
         for IMG in cube[1:]:
             try:
                 t, __ = aa.find_transform(IMG, REF, 

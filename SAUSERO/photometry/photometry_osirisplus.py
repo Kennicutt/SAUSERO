@@ -242,9 +242,9 @@ def photometry(programa, bloque, filename, conf):
     logger.info(f"STD name: {hd['OBJECT']}")
     logger.info(f"RA: {ra}, Dec: {dec}")
     logger.info(f"Exposure time: {t} sg")
-    logger.info(f"Position: {X}, {Y}")
+    logger.info(f"Position: {X[0]}, {Y[0]}")
     logger.info(f"Ellipse info -> a: {a}, b: {b} & theta: {theta}")
-    logger.info(f"Flux: {flux} counts")
+    logger.info(f"Flux: {flux[0]} counts")
 
     kronrad, krflag = sep.kron_radius(clean_data, X, Y, a, b, theta, 6.0)
     flux, fluxerr, flag = sep.sum_ellipse(clean_data, X, Y, a, b, theta, 2.5*kronrad,
@@ -266,6 +266,6 @@ def photometry(programa, bloque, filename, conf):
     dZP = dm + dflux * (t/flux[0]) * np.log10(np.e) + (extinction_dict[filtro][1] * hd['AIRMASS'])
 
     #print(f"ZP value: {ZP} +- {dZP}")
-    logger.info(f'{bcl.BOLD}Estimated ZP: {ZP} +- {dZP} for {filtro}{bcl.ENDC}')
+    logger.info(f'Estimated ZP: {ZP} +- {dZP} for {filtro}')
 
     return ZP, dZP
