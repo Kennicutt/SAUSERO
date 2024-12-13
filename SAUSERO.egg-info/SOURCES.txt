@@ -1,0 +1,9 @@
+LICENSE
+README.md
+setup.py
+SAUSERO.egg-info/PKG-INFO
+SAUSERO.egg-info/SOURCES.txt
+SAUSERO.egg-info/dependency_links.txt
+SAUSERO.egg-info/entry_points.txt
+SAUSERO.egg-info/requires.txt
+SAUSERO.egg-info/top_level.txt

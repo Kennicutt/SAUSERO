@@ -302,7 +302,7 @@ class Reduction:
         This method opens the FITS file containing the BPM.
         """
         bpm = CCDData.read(self.path_mask, unit=u.dimensionless_unscaled,
-                            hdu=1)
+                            hdu=0)
         
         #bpm = np.ones((2056,2073))
 

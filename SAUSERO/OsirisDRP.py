@@ -37,19 +37,19 @@ warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 # Parse configuration
-parser = argparse.ArgumentParser(
-                     prog = 'OsirisDRP',
-                     description = 'This software reduces observations taken with OSIRIS\
-                        in BBI mode. It can process any filter configuration and is suitable\
-                        for observations affected by fringing (Sloan_z).')
-
-parser.add_argument('-pr','--program', help='Select the GTC program.',
-                     required=True, type=str)
-
-parser.add_argument('-bl','--block', help='Select the block of the program.',
-                     required=True, type=str)
-
-args = parser.parse_args()
+#parser = argparse.ArgumentParser(
+#                     prog = 'OsirisDRP',
+#                     description = 'This software reduces observations taken with OSIRIS\
+#                        in BBI mode. It can process any filter configuration and is suitable\
+#                        for observations affected by fringing (Sloan_z).')
+#
+#parser.add_argument('-pr','--program', help='Select the GTC program.',
+#                     required=True, type=str)
+#
+#parser.add_argument('-bl','--block', help='Select the block of the program.',
+#                     required=True, type=str)
+#
+#args = parser.parse_args()
 
 ############## Predefined functions #############
 
@@ -93,7 +93,25 @@ def Results(PATH, ZP, eZP, MASK, filt, ext_info = extinction_dict):
         logger.info(f"Frame generated: {hd['GTCPRGID']}_{hd['GTCOBID']}_{filt}_{(hd['DATE'].split('T')[0]).replace('-','')}_{sky}_BBI.fits")
     
 
-if __name__ == '__main__':
+def run():
+    """
+    This function 
+    """
+    # Parse configuration
+    parser = argparse.ArgumentParser(
+                         prog = 'OsirisDRP',
+                         description = 'This software reduces observations taken with OSIRIS\
+                            in BBI mode. It can process any filter configuration and is suitable\
+                            for observations affected by fringing (Sloan_z).')
+
+    parser.add_argument('-pr','--program', help='Select the GTC program.',
+                         required=True, type=str)
+
+    parser.add_argument('-bl','--block', help='Select the block of the program.',
+                         required=True, type=str)
+
+    args = parser.parse_args()
+
 
     print(f"{bcl.OKBLUE}***********************************************************************{bcl.ENDC}")
     print(f"{bcl.OKBLUE}************************* WELCOME TO SAUSERO **************************{bcl.ENDC}")
@@ -225,3 +243,6 @@ you need to fill in the correct variable.")
         Results(al.PATH_REDUCED, ZP, eZP, o.MASK, filt)
     
     logger.info(f'{bcl.HEADER}¡¡¡¡¡¡¡ End of the reduction. The results are available in reduced directory. !!!!!!!{bcl.ENDC}')
+
+if __name__ == '__main__':
+    run()

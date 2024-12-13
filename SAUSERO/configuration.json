@@ -1,7 +1,7 @@
 {
     "DIRECTORIES":{
-        "PATH_SOFTWARE":"path to the software",
-        "PATH_DATA": "path to data directories"
+        "PATH_SOFTWARE":"/home/fabricio.perez/Core/Proyectos/SAUSERO/SAUSERO/",
+        "PATH_DATA": "/home/fabricio.perez/Frames/"
     },
 
     "REDUCTION":{

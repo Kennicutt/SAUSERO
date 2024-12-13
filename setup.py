@@ -37,7 +37,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'sausero=SAUSERO:main',
+            'sausero=OsirisDRP:run',
         ],
     },
     author="Fabricio M. Pérez-Toledo",
