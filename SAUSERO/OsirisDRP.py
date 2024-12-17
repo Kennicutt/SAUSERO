@@ -20,17 +20,18 @@ __author__="Fabricio Manuel Pérez Toledo"
 __version__ = "0.1.0"
 __license__ = "GPL v3.0"
 
-from reduction.reduction_osirisplus import *
-from aligning.aligning_osirisplus import *
-from astroMetry.astrometry_osirisplus import *
-from photometry.photometry_osirisplus import *
+from SAUSERO.reduction_osirisplus import *
+from SAUSERO.aligning_osirisplus import *
+from SAUSERO.astrometry_osirisplus import *
+from SAUSERO.photometry_osirisplus import *
 
 from astropy import units as u
 
-import argparse, time
+import argparse, time, os, shutil
 import os, json, warnings
+import pkg_resources
 
-from Color_Codes import bcolors as bcl
+from SAUSERO.Color_Codes import bcolors as bcl
 from loguru import logger
 
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -53,9 +54,35 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 ############## Predefined functions #############
 
+def create_config_file_home():
+    """
+    This function creates a copy of the configuration file in .config/sausero/ for easier accessibility.
+    """
+    if not os.path.exists(f"{os.path.expanduser('~')}/sausero/configuration.json"):
+        config_path = pkg_resources.resource_filename(
+        'SAUSERO', 'config/configuration.json')
+        os.makedirs(f"{os.path.expanduser('~')}/sausero/", exist_ok=True)
+        shutil.copy(config_path,f'{os.path.expanduser("~")}/sausero/configuration.json')
+        print(f"{bcl.WARNING}On the first run, it is necessary to relocate the configuration file to the ~/config/sausero/\n\
+directory for easier accessibility. Navigate to this directory to modify the paths to the code location and\n\
+the images to be processed. Once the modifications are made, you can start using SAUSERO.{bcl.ENDC}")
+        sys.exit()
+
 
 def readJSON():
-    return json.load(open("configuration.json"))
+    """
+    Reads the file containing the configuration parameters.
+
+    Returns:
+        json: Collection of configuration parameters 
+    """
+    if os.path.exists(f"{os.path.expanduser('~')}/sausero/configuration.json"):
+        return json.load(open(f"{os.path.expanduser('~')}/sausero/configuration.json"))
+    else:
+        config_path = pkg_resources.resource_filename(
+            'SAUSERO', 'config/configuration.json')
+        #return json.load(open("SAUSERO/config/configuration.json"))
+        return json.load(open(config_path))
 
 def Results(PATH, ZP, eZP, MASK, filt, ext_info = extinction_dict):
     """ This function adds relevant information to the science image that will be 
@@ -139,6 +166,8 @@ an account on Astrometry.net. Once you have the code that allows you to use the 
 you need to fill in the correct variable.")
     print(f"\n")
 
+    create_config_file_home()
+
     PRG = args.program
     OB = args.block
 
@@ -152,8 +181,10 @@ you need to fill in the correct variable.")
     #the masterbias and dividing by the normalized masterflat.
     #Subsequently, the cleaned images are saved.
     logger.info(f'{bcl.HEADER}---------- Starting the reduction ----------{bcl.ENDC}')
+    bpm_path = pkg_resources.resource_filename(
+        'SAUSERO', 'BPM/BPM_OSIRIS_PLUS.fits')
     o = Reduction(PRG, OB, main_path=conf['DIRECTORIES']['PATH_DATA'],
-                path_mask="BPM/BPM_OSIRIS_PLUS.fits")
+                path_mask=bpm_path)
     o.get_imagetypes()
     o.load_BPM()
     o.sort_down_drawer()
@@ -186,9 +217,9 @@ you need to fill in the correct variable.")
             fr = CCDData.read(lst[0], unit='adu')
             header = fr.header
             header['exptime'] = al.total_exptime * (al.num + 1.)
-            logger.info(f"Total exposure time estimated: {header['exptime']} sg")
+            logger.info(f"Estimated total exposure time: {header['exptime']} sec")
             wcs = fr.wcs
-            logger.info(f"Update the WCS information")
+            logger.info(f"Updating the WCS information")
             save_fits(align, header, wcs, al.PATH_REDUCED / f'aligned_result_{filt}_{sky}.fits')
             print(f'{bcl.HEADER}¡¡¡¡¡¡¡ Alineado para {filt} & {sky} realizado exitosamente !!!!!!!{bcl.ENDC}')
 

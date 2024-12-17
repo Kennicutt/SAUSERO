@@ -19,9 +19,16 @@ Fabricio Manuel Pérez Toledo <fabricio.perez@gtc.iac.es>
 from setuptools import setup, find_packages
 
 setup(
-    name="SAUSERO",
+    name="sausero",
     version="0.1.0",
-    packages=find_packages(),
+    packages=find_packages(where='.'),
+    package_data={
+        'SAUSERO    ': [
+            'config/configuration.json',
+            'BPM/BPM_OSIRIS_PLUS.fits'
+        ],
+    },
+    include_package_data=True,
     install_requires=[
         "astroalign",
 	"astrometry_net_client",
@@ -37,7 +44,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'sausero=OsirisDRP:run',
+            'sausero=SAUSERO.OsirisDRP:run',
         ],
     },
     author="Fabricio M. Pérez-Toledo",
@@ -51,5 +58,5 @@ setup(
         "License :: OSI Approved :: GPL License",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.11',
+    python_requires='>=3.8',
 )
