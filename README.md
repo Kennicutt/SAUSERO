@@ -138,3 +138,44 @@ repository.
 By e-mail: fabricio.perez@gtc.iac.es
 
 Repository: https://github.com/Kennicutt/SAUSERO
+
+SAUSERO
+
+SAUSERO is a reduction software for the Broad Band Imaging mode of OSIRIS+.
+
+Developed by Fabricio M. Pérez-Toledo.
+General Description
+
+SAUSERO processes raw science frames to address noise, cosmetic defects, and pixel heterogeneity, preparing them for photometric studies. These corrections are essential before any analysis can be performed. The operations applied to the images depend on the type of observation. This software has been specifically designed to reduce and prepare science frames for photometric studies.
+Key Reduction Steps:
+
+    Application of a Bad Pixel Mask (BPM) to all frames.
+    Creation of the Master Bias.
+    Creation of the Master Flat.
+    Application of master calibration frames to both standard star and science frames.
+    Removal of cosmic rays.
+    Sky subtraction.
+    Alignment of science frames.
+    Astrometric calibration.
+    Flux calibration.
+
+Input Requirements:
+
+The software requires the following frames as input:
+
+    Bias frames
+    Sky flat frames
+    Photometric standard star frames
+    Science frames
+
+Outputs
+
+The generated results consist of one image per observed band. For each image, the following corrections and calibrations will have been applied:
+
+    Bias subtraction
+    Flat-field correction (including fringing correction for the Sloan z band, if applicable)
+    Image alignment and stacking
+    Astrometric calibration
+    Photometric calibration (estimation of the zero-point, ZP ± error)
+
+To address cosmetic defects, a Bad Pixel Mask (BPM) is applied, and the LACosmic algorithm is used to handle cosmic ray removal.
