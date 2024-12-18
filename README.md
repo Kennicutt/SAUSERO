@@ -1,8 +1,8 @@
 # SAUSERO
 
-(SAUSERO) is a reduction software for Broad Band Imaging mode of OSIRIS+.
+__SAUSERO__ is a reduction software for Broad Band Imaging mode of OSIRIS+.
 
-Developed by (Fabricio M. Pérez-Toledo)
+Developed by __Fabricio M. Pérez-Toledo__
 
 ## General Description
 
