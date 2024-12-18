@@ -102,7 +102,7 @@ reduced/, where the reduced frames will be saved.
 
 2. No_Session: This is your Astrometry.net API key. Example:
 
-    "No_Session":"astrometry api key"
+    "No_Session":"astrometry-api-key"
 
 To obtain this key, create an account on Astrometry.net. Copy your API key and paste it into the configuration file.
 
@@ -112,7 +112,7 @@ After updating and saving the configuration file, you can run the command again.
 
 ### Outputs and Results
 
-Once the process is complete, you will find a collection of reduced frames in the reduced/ folder inside your frame 
+Once the process is complete, you will find a collection of reduced frames in the <u>reduced/</u> folder inside your frame 
 directory. The output includes:
 
 A. __Reduced science frames__:
