@@ -136,7 +136,7 @@ def photometry(programa, bloque, filename, conf):
     target_name = hd['OBJECT'].split('_')[1]
     
     ra, dec = bands_dict[target_name][:2]
-    logger.info("Give the coordinates for STD")
+    logger.info("Giving the coordinates for STD")
 
     c = SkyCoord(ra,dec, frame=FK5, unit=(u.hourangle, u.deg), obstime="J2000")
 
@@ -151,7 +151,7 @@ def photometry(programa, bloque, filename, conf):
     plt.plot(x, y, 'xr')
     fig.colorbar(im)
     fig.savefig(path +f'STD_IN_FIELD-{filtro}.png')
-    logger.info("STD's FoV has been saved like PNG file")
+    logger.info("STD's FoV has been saved as a PNG file")
 
     # Extract Sources
 
@@ -209,7 +209,7 @@ def photometry(programa, bloque, filename, conf):
 
     logger.info(f"STD name: {hd['OBJECT']}")
     logger.info(f"RA: {ra}, Dec: {dec}")
-    logger.info(f"Exposure time: {t} sg")
+    logger.info(f"Exposure time: {t} sec")
     logger.info(f"Position: {X[0]}, {Y[0]}")
     logger.info(f"Ellipse info -> a: {a[0]}, b: {b[0]} & theta: {theta[0]}")
     logger.info(f"Flux: {flux[0]} counts")

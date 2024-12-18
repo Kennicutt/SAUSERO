@@ -6,39 +6,189 @@ Home-page: https://github.com/Kennicutt/SAUSERO
 Author: Fabricio M. Pérez-Toledo
 Author-email: fabricio.telescope@gmail.com
 Classifier: Programming Language :: Python :: 3
-Classifier: License :: OSI Approved :: GPL License
+Classifier: License :: OSI Approved :: GNU General Public License v3 (GPLv3)
 Classifier: Operating System :: OS Independent
 Requires-Python: >=3.8
 Description-Content-Type: text/markdown
 License-File: LICENSE
-Requires-Dist: astroalign
-Requires-Dist: astrometry_net_client
-Requires-Dist: astropy
-Requires-Dist: astroquery
-Requires-Dist: ccdproc
-Requires-Dist: lacosmic
-Requires-Dist: loguru
-Requires-Dist: matplotlib
-Requires-Dist: numpy
-Requires-Dist: PyYAML
-Requires-Dist: sep
 
-SAUSERO es una rutina de reducción para el modo imagen de OSIRIS+. Hay otra versión válida para
-la reducción de las observaciones adquiridas con el anterior sensor.
+# SAUSERO
 
-Para su uso, se debe llevar a cabo las siguientes acciones:
+__SAUSERO__ is a reduction software for Broad Band Imaging mode of OSIRIS+.
 
-1. Conectarse a Phase3. Esto puede hacerse en remoto a través del siguiente comando:
-"ssh -XY phase3@calp-drm".
+Developed by __Fabricio M. Pérez-Toledo__
 
-2. Activar el entorno de SAUSERO mediante el siguiente comando: "conda activate sausero".
+## General Description
 
-3. Para el ejecución de la rutina se comanda: "SAUSERO <PRG> <OB>".
+SAUSERO processes raw science frames to address noise, cosmetic defects, and pixel heterogeneity, preparing them for photometric studies. These corrections are essential before any analysis can be performed. The operations applied to the images depend on the type of observation. This software has been specifically designed to reduce and prepare science frames for photometric studies.
 
-4. Una vez finalizada la reducción, se indicará la ruta y la lista de imágenes finales generadas.
+### Key Reduction Steps:
 
-Los resultados generados son una imagen por cada banda observada. En dicha imagen se habrá hecho
-sustracción de bias, correción de flatfield (y corrección de fringing en caso Sloan z), alineado
-de las imágenes entre sí y sumado, calibración astrométrica y calibración fotométrica (estimación del
-ZP +- error). Para la eliminación de efectos cosméticos se hace uso de una BPM y se aplica el
-algoritmo de LACosmic para los rayos cósmicos.
+1. Application of a __Bad Pixel Mask (BPM)__ to all frames.
+2. Creation of the __Master Bias__.
+3. Creation of the __Master Flat__.
+4. Application of master calibration frames to both __standard star__ and __science frames__.
+5. Removal of __cosmic rays__.
+6. __Sky subtraction__.
+7. Alignment of __science frames__.
+8. __Astrometric calibration__.
+9. __Flux calibration__.
+
+### Input Requirements:
+
+The software requires the following frames as input:
+
+- __Bias frames__
+- __Sky flat frames__
+- __Photometric standard star frames__
+- __Science frames__
+
+## Outputs
+
+The generated results consist of one image per observed band. For each image, the following corrections and calibrations will have been applied:
+
+- __Bias subtraction__
+- __Flat-field correction__ (including fringing correction for the Sloan z band, if applicable)
+- __Image alignment and stacking__
+- __Astrometric calibration__
+- __Photometric calibration__ (estimation of the zero-point, ZP ± error)
+
+To address cosmetic defects, a __Bad Pixel Mask (BPM)__ is applied, and the __LACosmic algorithm__ is used to handle cosmic ray removal.
+
+## Requirements
+
+### Operative System
+- __Any__: The software is designed to run within a __Conda environment__, ensuring compatibility across platforms.
+
+### Dependencies
+The following Python packages are required (minimum versions specified):
+
+-  `astroalign>=2.4.1`
+-  `astrometry_net_client>=0.3.0`
+-  `astropy>=5.3.4`
+-  `astroquery>=0.4.6`
+-  `ccdproc>=2.4.1`
+-  `lacosmic>=1.1.0`
+-  `loguru>=0.7.2`
+-  `matplotlib>=3.8.0`
+-  `numpy>=1.25.2`
+-  `PyYAML>=6.0.2`
+-  `sep>=1.2.1`
+
+### Hardware Requirements
+- __RAM__: Minimum 4GB (higher is recommended for large datasets).
+
+## Instalation
+
+Installing SAUSERO is straightforward. Follow these steps:
+
+1. __Activate your Conda environment__ (or create a new one if needed):
+    ```
+    conda activate <your_env>
+
+2. __Install SAUSERO__ using `pip`:
+    ```
+    pip install sausero
+
+That's it! SAUSERO is now ready to use.
+
+### Optional: Creating a New Conda Environment
+
+If you don’t have an existing Conda environment, you can create one specifically for SAUSERO with the following commands:
+
+    conda create -n sausero_env python=3.9 -y
+    conda activate sausero_env
+    pip install sausero
+
+## Usage
+
+Once the Conda environment is set up, you can run __SAUSERO__ using the following command:
+
+    sausero -pr <your_program> -bl <your_ob>
+
+- `-pr`: Your GTC program indicator.
+- `-bl`: The observed block number.
+
+### First-Time Setup
+
+The first time you run the command, it will fail because __SAUSERO__ needs to know the path to your frames.
+To resolve this, you must edit the configuration file, which is located in your home directory inside 
+a folder named `sausero`.
+
+You need to set the following parameters in the configuration file:
+
+1. `PATH_DATA`: Set this to the root directory containing your frames. Example:
+
+    ```
+    "PATH_DATA": "/path/to/your/frames/"
+
+The directory structure must follow the format `<Your_Program>_<Your_OB>/`. Inside this directory, you should have 
+a `raw/` folder where the original frames are stored. During execution, __SAUSERO__ will create a new folder named 
+`reduced/`, where the reduced frames will be saved.
+
+2. `No_Session`: This is your Astrometry.net API key. Example:
+
+    ```
+    "No_Session":"astrometry-api-key"
+
+To obtain this key, create an account on [Astrometry.net](https://nova.astrometry.net/). Copy your API key and paste it into the configuration file.
+
+### Running SAUSERO
+
+After updating and saving the configuration file, you can run the command again. This time, the software will execute successfully.
+
+### Outputs and Results
+
+Once the process is complete, you will find a collection of reduced frames in the `reduced/` folder inside your frame 
+directory. The output includes:
+
+A. __Reduced science frames__:
+- One version with the sky included.
+- One version with the sky subtracted.
+
+B. __Aligned frames__:
+- Both sky-included and sky-subtracted versions.
+
+C. __Astrometrized frames__:
+- Frames with astrometric calibration applied.
+
+D. __Visualization PNG files__:
+- A PNG showing the detected sources in the Field of View (FoV).
+- A PNG showing the photometric standard star.
+
+E. __Final reduced science frames__:
+- Both sky-included and sky-subtracted versions.
+
+
+### Important Notes
+
+- By default, __SAUSERO__ ensures your data remains private when using Astrometry.net. The software's internal configuration avoids sharing any data with the Astrometry.net community, ensuring your data's security.
+
+## Project Structure
+
+    SAUSERO/
+        BPM/
+            BPM_OSIRIS_PLUS.fits -> BAD PIXEL MASK
+        config/
+            configuration.json   -> Configuration file.
+        aligning_osirisplus.py   -> Aligns the science frames. 
+        astrometry_osirisplus.py -> Astrometrization of the science frames.
+        Color_Codes.py           -> Gives color to the comments
+        OsirisDRP.py             -> Handles all the sofware and manages the frames. 
+        photometry_osirisplus.py -> Carries out the photometric calibration.
+        reduction_osirisplus.py  -> Carries out the clean process.
+
+## Note about the frames
+
+The code is designed to work with __OSIRIS+__ frames. They must be in __FITS__ format.
+
+## LICENSE
+
+This software is under __GPL v3.0__ license. More information is available in the
+repository.
+
+## CONTACT
+
+- __Email__: [fabricio.perez@gtc.iac.es](fabricio.perez@gtc.iac.es)
+
+- __Repository__: [https://github.com/Kennicutt/SAUSERO](https://github.com/Kennicutt/SAUSERO)

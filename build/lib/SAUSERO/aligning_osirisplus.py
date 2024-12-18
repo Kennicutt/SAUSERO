@@ -63,10 +63,10 @@ class OsirisAlign:
         """
         self.tab = Table(self.ic.summary)
         sub_tab = self.tab[(self.tab['filter2']==filt) & (self.tab['ssky']==sky)]
-        logger.info(f"Looking for frames with {filt} and {sky}")
+        logger.info(f"Looking for frames that have {filt} and {sky}")
         logger.info(f"{sub_tab}")
         self.total_exptime = sub_tab['exptime'].value.data[0]
-        logger.info(f"Exposure time per frame: {self.total_exptime} sg")
+        logger.info(f"Exposure time per frame: {self.total_exptime} sec")
         return self.ic.files_filtered(imgtype="SCIENCE",
                                       filtro=filt,
                                       ssky = sky,

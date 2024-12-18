@@ -263,7 +263,7 @@ class Reduction:
         value, masterbias, masterflat = args
         ccd = self.get_each_data(self.DATA_DICT, value)
         frames = [(fr - masterbias)/masterflat for fr in ccd]
-        logger.info(f"Applied masterbias and masterflat over the frames for {value}.")
+        logger.info(f"Applied masterbias and masterflat on the frames for {value}.")
         return frames
 
 
@@ -318,7 +318,7 @@ class Reduction:
         """
         self.ic_r = ccdp.ImageFileCollection(self.PATH_RESULTS, keywords='*',
                                              glob_include='red*')
-        logger.info("Table with reduced science frames is ready.")
+        logger.info("Table with several reduced science frames is ready.")
 
 
 
@@ -496,7 +496,7 @@ class Reduction:
             be saved contain sky or not. Defaults to False.
         """
         if not std:
-            logger.info("Saving photometric calibration frames reduced.")
+            logger.info("Saving reduced photometric calibration frames.")
             lst_results = [elem for elem in list(self.DATA_DICT.keys()) if 'target' in elem]
         else:
             logger.info("Saving science frames reduced.")

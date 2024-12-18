@@ -217,9 +217,9 @@ you need to fill in the correct variable.")
             fr = CCDData.read(lst[0], unit='adu')
             header = fr.header
             header['exptime'] = al.total_exptime * (al.num + 1.)
-            logger.info(f"Total exposure time estimated: {header['exptime']} sg")
+            logger.info(f"Estimated total exposure time: {header['exptime']} sec")
             wcs = fr.wcs
-            logger.info(f"Update the WCS information")
+            logger.info(f"Updating the WCS information")
             save_fits(align, header, wcs, al.PATH_REDUCED / f'aligned_result_{filt}_{sky}.fits')
             print(f'{bcl.HEADER}¡¡¡¡¡¡¡ Alineado para {filt} & {sky} realizado exitosamente !!!!!!!{bcl.ENDC}')
 

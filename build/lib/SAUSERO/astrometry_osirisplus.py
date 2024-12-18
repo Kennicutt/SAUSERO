@@ -81,7 +81,7 @@ def apply_astrometrynet_client(filename, conf):
     upl = FileUpload(filename, session=s, settings=ss)
     logger.info("Frame has been uploaded")
     submission = upl.submit()
-    logger.info("Waiting an answer from API...")
+    logger.info("Waiting for an answer from API...")
     submission.until_done()
     job = submission.jobs[0]
     job.until_done()
