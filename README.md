@@ -6,27 +6,40 @@ Developed by __Fabricio M. Pérez-Toledo__
 
 ## General Description
 
-The science frames always present noises, cosmetic defects or heterogeneity between pixels (in other words raws)
-and I have to perform several operations to correct them before the analising step. The operations on the images 
-depend on the kind of observation. In this case, this software has been developed with the goal to prepare the 
-science frames for photometric studies. The correction steps are:
+SAUSERO processes raw science frames to address noise, cosmetic defects, and pixel heterogeneity, preparing them for photometric studies. These corrections are essential before any analysis can be performed. The operations applied to the images depend on the type of observation. This software has been specifically designed to reduce and prepare science frames for photometric studies.
 
-1. Application of Bad Pixel Mask to all frames.
-2. Creation of Master Bias.
-3. Creation of Master Flat.
-4. Application of masters to STD star and science frames.
-5. Remove the cosmic rays.
-6. Sky subtraction.
-7. Aligning science frames.
-8. Astrometrization.
-9. Flux calibration.
+### Key Reduction Steps:
 
-It requires bias frames, skyflat frames, photometric standard star frames and science frames.
+1. Application of a __Bad Pixel Mask (BPM)__ to all frames.
+2. Creation of the __Master Bias__.
+3. Creation of the __Master Flat__.
+4. Application of master calibration frames to both __standard star__ and __science frames__.
+5. Removal of __cosmic rays__.
+6. __Sky subtraction__.
+7. Alignment of __science frames__.
+8. __Astrometric calibration__.
+9. __Flux calibration__.
 
-The generated results consist of one image per observed band. In each image, the following processes will have
-been applied: bias subtraction, flat-field correction (and fringing correction in the case of Sloan z), image 
-alignment and stacking, astrometric calibration, and photometric calibration (estimation of the ZP ± error). 
-To remove cosmetic effects, a BPM is used, and the LACosmic algorithm is applied to handle cosmic rays.
+### Input Requirements:
+
+The software requires the following frames as input:
+
+- Bias frames
+- Sky flat frames
+- Photometric standard star frames
+- Science frames
+
+## Outputs
+
+The generated results consist of one image per observed band. For each image, the following corrections and calibrations will have been applied:
+
+- Bias subtraction
+- Flat-field correction (including fringing correction for the Sloan z band, if applicable)
+- Image alignment and stacking
+- Astrometric calibration
+- Photometric calibration (estimation of the zero-point, ZP ± error)
+
+To address cosmetic defects, a __Bad Pixel Mask (BPM)__ is applied, and the __LACosmic algorithm__ is used to handle cosmic ray removal.
 
 ## Requirements
 

@@ -1,0 +1,22 @@
+The science frames always present noises, cosmetic defects or heterogeneity between pixels (in other words raws)
+and I have to perform several operations to correct them before the analising step. The operations on the images 
+depend on the kind of observation. In this case, this software has been developed with the goal to prepare the 
+science frames for photometric studies. The correction steps are:
+
+1. Application of Bad Pixel Mask to all frames.
+2. Creation of Master Bias.
+3. Creation of Master Flat.
+4. Application of masters to STD star and science frames.
+5. Remove the cosmic rays.
+6. Sky subtraction.
+7. Aligning science frames.
+8. Astrometrization.
+9. Flux calibration.
+
+It requires bias frames, skyflat frames, photometric standard star frames and science frames.
+
+The generated results consist of one image per observed band. In each image, the following processes will have
+been applied: bias subtraction, flat-field correction (and fringing correction in the case of Sloan z), image 
+alignment and stacking, astrometric calibration, and photometric calibration (estimation of the ZP ± error). 
+To remove cosmetic effects, a BPM is used, and the LACosmic algorithm is applied to handle cosmic rays.
+
