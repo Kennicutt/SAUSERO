@@ -20,3 +20,62 @@ been applied: bias subtraction, flat-field correction (and fringing correction i
 alignment and stacking, astrometric calibration, and photometric calibration (estimation of the ZP ± error). 
 To remove cosmetic effects, a BPM is used, and the LACosmic algorithm is applied to handle cosmic rays.
 
+
+
+
+The first one will be the root directory. You should have concern for the standard
+structure. The directory with the frames must be as "<Your_Program>_<Your_OB>/".
+Inside, it must create a raw directory where you will store the original frames.
+During the execution, sausero will create other folder called as "reduced" where
+the reduced frames will be saved.
+
+The second one needs that you create an account in Astrometry.net. You will find
+astrometry api key and paste it in configuration file.
+
+After you finish to fill and save the configuration file, if you execute the code
+again, it will run in this ocassion.
+
+About the results, you will find the your frame directory a new collection of the 
+frames. It will have:
+
+A. Each science frame reduced, in other words, once the master bias and master
+flat have been applied. Each frame is saved two time, one with sky and another
+without sky.
+B. Once aligned both cases.
+C. They have after been applied the astrometrization.
+D. A PNG file showing the sources in the FoV.
+E. A PNG file showing the STD star.
+F. Final reduced science frames with sky and without sky.
+
+WARNING: By default, the internal configuration always avoid to share data with 
+the astrometry.net community. So that's why your data are safe using
+astrometry.net.
+
+## Project Structure
+
+    SAUSERO/
+        BPM/
+            BPM_OSIRIS_PLUS.fits -> BAD PIXEL MASK
+        config/
+            configuration.json   -> Configuration file.
+        aligning_osirisplus.py   -> Aligns the science frames. 
+        astrometry_osirisplus.py -> Astrometrization of the science frames.
+        Color_Codes.py           -> Gives color to the comments
+        OsirisDRP.py             -> Handles all the sofware and manages the frames. 
+        photometry_osirisplus.py -> Carries out the photometric calibration.
+        reduction_osirisplus.py  -> Carries out the clean process.
+
+## Note about the frames
+
+The code is designed to work with OSIRIS+ frames. They must be in FITS format.
+
+## LICENSE
+
+This software is under GPL v3.0 license. More information is available in the
+repository.
+
+## CONTACT
+
+By e-mail: fabricio.perez@gtc.iac.es
+
+Repository: https://github.com/Kennicutt/SAUSERO
