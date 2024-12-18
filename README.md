@@ -52,9 +52,9 @@ Hardware: RAM 4 GB
 
 The installation is very easy. You only need to use pip as I show you below:
 
-conda activate <your_env>
+    conda activate <your_env>
 
-pip install sausero
+    pip install sausero
 
 ## Usage
 
