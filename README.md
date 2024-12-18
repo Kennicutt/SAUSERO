@@ -24,20 +24,20 @@ SAUSERO processes raw science frames to address noise, cosmetic defects, and pix
 
 The software requires the following frames as input:
 
-- Bias frames
-- Sky flat frames
-- Photometric standard star frames
-- Science frames
+- __Bias frames__
+- __Sky flat frames__
+- __Photometric standard star frames__
+- __Science frames__
 
 ## Outputs
 
 The generated results consist of one image per observed band. For each image, the following corrections and calibrations will have been applied:
 
-- Bias subtraction
-- Flat-field correction (including fringing correction for the Sloan z band, if applicable)
-- Image alignment and stacking
-- Astrometric calibration
-- Photometric calibration (estimation of the zero-point, ZP ± error)
+- __Bias subtraction__
+- __Flat-field correction__ (including fringing correction for the Sloan z band, if applicable)
+- __Image alignment and stacking__
+- __Astrometric calibration__
+- __Photometric calibration__ (estimation of the zero-point, ZP ± error)
 
 To address cosmetic defects, a __Bad Pixel Mask (BPM)__ is applied, and the __LACosmic algorithm__ is used to handle cosmic ray removal.
 
