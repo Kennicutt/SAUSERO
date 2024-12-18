@@ -94,7 +94,7 @@ You need to set the following parameters in the configuration file:
 
 1. PATH_DATA: Set this to the root directory containing your frames. Example:
 
-    "PATH_DATA": "/path/to/your/frames/"
+    ``` "PATH_DATA": "/path/to/your/frames/"
 
 The directory structure must follow the format <Your_Program>_<Your_OB>/. Inside this directory, you should have 
 a raw/ folder where the original frames are stored. During execution, SAUSERO will create a new folder named 
@@ -102,7 +102,7 @@ reduced/, where the reduced frames will be saved.
 
 2. No_Session: This is your Astrometry.net API key. Example:
 
-    "No_Session":"astrometry-api-key"
+    ``` "No_Session":"astrometry-api-key"
 
 To obtain this key, create an account on Astrometry.net. Copy your API key and paste it into the configuration file.
 
@@ -112,7 +112,7 @@ After updating and saving the configuration file, you can run the command again.
 
 ### Outputs and Results
 
-Once the process is complete, you will find a collection of reduced frames in the <u>reduced/</u> folder inside your frame 
+Once the process is complete, you will find a collection of reduced frames in the reduced/ folder inside your frame 
 directory. The output includes:
 
 A. __Reduced science frames__:
