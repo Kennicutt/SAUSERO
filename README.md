@@ -43,47 +43,41 @@ To address cosmetic defects, a __Bad Pixel Mask (BPM)__ is applied, and the __LA
 
 ## Requirements
 
-Operative System: Any (it should run in conda enviroment).
+### Operative System
+- __Any__: The software is designed to run within a __Conda environment__, ensuring compatibility across platforms.
 
-Dependencies:
+### Dependencies
+The following Python packages are required (minimum versions specified):
 
-  astroalign>=2.4.1
-  
-  astrometry_net_client>=0.3.0
-  
-  astropy>=5.3.4
-  
-  astroquery>=0.4.6
-  
-  ccdproc>=2.4.1
-  
-  lacosmic>=1.1.0
-  
-  loguru>=0.7.2
-  
-  matplotlib>=3.8.0
-  
-  numpy>=1.25.2
-  
-  PyYAML>=6.0.2
-  
-  sep>=1.2.1
-
-Hardware: RAM 4 GB
+-  astroalign>=2.4.1
+-  astrometry_net_client>=0.3.0
+-  astropy>=5.3.4
+-  astroquery>=0.4.6
+-  ccdproc>=2.4.1
+-  lacosmic>=1.1.0
+-  loguru>=0.7.2
+-  matplotlib>=3.8.0
+-  numpy>=1.25.2
+-  PyYAML>=6.0.2
+-  sep>=1.2.1
 
 ## Instalation
 
-The installation is very easy. You only need to use pip as I show you below:
+Installing SAUSERO is straightforward. Follow these steps:
 
+1. __Activate your Conda environment__ (or create a new one if needed):
     conda activate <your_env>
 
+2. __Install SAUSERO__ using pip:
     pip install sausero
+
+That's it! SAUSERO is now ready to use.
 
 ## Usage
 
 Using the same conda enviroment, we should command as the following example:
 
-$ sausero -pr <your_program> -bl <your_ob>
+    sausero -pr <your_program> -bl <your_ob>
 
 where -pr is your GTC program indicator and -bl is the observed block number.
 
