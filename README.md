@@ -66,9 +66,11 @@ The following Python packages are required (minimum versions specified):
 Installing SAUSERO is straightforward. Follow these steps:
 
 1. __Activate your Conda environment__ (or create a new one if needed):
+
     conda activate <your_env>
 
 2. __Install SAUSERO__ using pip:
+
     pip install sausero
 
 That's it! SAUSERO is now ready to use.
