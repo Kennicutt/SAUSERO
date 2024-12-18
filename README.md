@@ -77,19 +77,65 @@ That's it! SAUSERO is now ready to use.
 
 ## Usage
 
-Using the same conda enviroment, we should command as the following example:
+Once the Conda environment is set up, you can run SAUSERO using the following command:
 
     sausero -pr <your_program> -bl <your_ob>
 
-where -pr is your GTC program indicator and -bl is the observed block number.
+- -pr: Your GTC program indicator.
+- -bl: The observed block number.
 
-The first time, it will fail because it doesn't know which is the path to frames.
-You have to modify the configuration file which is placed in your home directory
-inside of a folder called as sausero. You need to fill some configuration parameters
-as:
+### First-Time Setup
 
-1. "PATH_DATA": "/path/to/your/frames/"
-2. "No_Session":"astrometry api key"
+The first time you run the command, it will fail because SAUSERO needs to know the path to your frames.
+To resolve this, you must edit the configuration file, which is located in your home directory inside 
+a folder named sausero.
+
+You need to set the following parameters in the configuration file:
+
+1. PATH_DATA: Set this to the root directory containing your frames. Example:
+
+    "PATH_DATA": "/path/to/your/frames/"
+
+The directory structure must follow the format <Your_Program>_<Your_OB>/. Inside this directory, you should have 
+a raw/ folder where the original frames are stored. During execution, SAUSERO will create a new folder named 
+reduced/, where the reduced frames will be saved.
+
+2. No_Session: This is your Astrometry.net API key. Example:
+
+    "No_Session":"astrometry api key"
+
+To obtain this key, create an account on Astrometry.net. Copy your API key and paste it into the configuration file.
+
+### Running SAUSERO
+
+After updating and saving the configuration file, you can run the command again. This time, the software will execute successfully.
+
+### Outputs and Results
+
+Once the process is complete, you will find a collection of reduced frames in the reduced/ folder inside your frame 
+directory. The output includes:
+
+A. __Reduced science frames__:
+- One version with the sky included.
+- One version with the sky subtracted.
+
+B. __Aligned frames__:
+- Both sky-included and sky-subtracted versions.
+
+C. __Astrometrized frames__:
+- Frames with astrometric calibration applied.
+
+D. __Visualization PNG files__:
+- A PNG showing the detected sources in the Field of View (FoV).
+- A PNG showing the photometric standard star.
+
+E. __Final reduced science frames__:
+- Both sky-included and sky-subtracted versions.
+
+
+### Important Notes
+
+- By default, __SAUSERO__ ensures your data remains private when using Astrometry.net. The software's internal configuration avoids sharing any data with the Astrometry.net community, ensuring your data's security.
 
 The first one will be the root directory. You should have concern for the standard
 structure. The directory with the frames must be as "<Your_Program>_<Your_OB>/".
