@@ -49,46 +49,57 @@ To address cosmetic defects, a __Bad Pixel Mask (BPM)__ is applied, and the __LA
 ### Dependencies
 The following Python packages are required (minimum versions specified):
 
--  astroalign>=2.4.1
--  astrometry_net_client>=0.3.0
--  astropy>=5.3.4
--  astroquery>=0.4.6
--  ccdproc>=2.4.1
--  lacosmic>=1.1.0
--  loguru>=0.7.2
--  matplotlib>=3.8.0
--  numpy>=1.25.2
--  PyYAML>=6.0.2
--  sep>=1.2.1
+-  `astroalign>=2.4.1`
+-  `astrometry_net_client>=0.3.0`
+-  `astropy>=5.3.4`
+-  `astroquery>=0.4.6`
+-  `ccdproc>=2.4.1`
+-  `lacosmic>=1.1.0`
+-  `loguru>=0.7.2`
+-  `matplotlib>=3.8.0`
+-  `numpy>=1.25.2`
+-  `PyYAML>=6.0.2`
+-  `sep>=1.2.1`
+
+### Hardware Requirements
+- __RAM__: Minimum 4GB (higher is recommended for large datasets).
 
 ## Instalation
 
 Installing SAUSERO is straightforward. Follow these steps:
 
 1. __Activate your Conda environment__ (or create a new one if needed):
-
+    ```
     conda activate <your_env>
 
-2. __Install SAUSERO__ using pip:
-
+2. __Install SAUSERO__ using `pip`:
+    ```
     pip install sausero
 
 That's it! SAUSERO is now ready to use.
 
+### Optional: Creating a New Conda Environment
+
+If you don’t have an existing Conda environment, you can create one specifically for SAUSERO with the following commands:
+
+    conda create -n sausero_env python=3.9 -y
+    conda activate sausero_env
+    pip install sausero
+
 ## Usage
 
-Once the Conda environment is set up, you can run SAUSERO using the following command:
+Once the Conda environment is set up, you can run __SAUSERO__ using the following command:
 
     sausero -pr <your_program> -bl <your_ob>
 
-- -pr: Your GTC program indicator.
-- -bl: The observed block number.
+- `-pr`: Your GTC program indicator.
+- `-bl`: The observed block number.
 
 ### First-Time Setup
 
-The first time you run the command, it will fail because SAUSERO needs to know the path to your frames.
+The first time you run the command, it will fail because __SAUSERO__ needs to know the path to your frames.
 To resolve this, you must edit the configuration file, which is located in your home directory inside 
-a folder named sausero.
+a folder named `sausero`.
 
 You need to set the following parameters in the configuration file:
 
@@ -98,7 +109,7 @@ You need to set the following parameters in the configuration file:
     "PATH_DATA": "/path/to/your/frames/"
 
 The directory structure must follow the format `<Your_Program>_<Your_OB>/`. Inside this directory, you should have 
-a `raw/` folder where the original frames are stored. During execution, SAUSERO will create a new folder named 
+a `raw/` folder where the original frames are stored. During execution, __SAUSERO__ will create a new folder named 
 `reduced/`, where the reduced frames will be saved.
 
 2. `No_Session`: This is your Astrometry.net API key. Example:
@@ -106,7 +117,7 @@ a `raw/` folder where the original frames are stored. During execution, SAUSERO 
     ```
     "No_Session":"astrometry-api-key"
 
-To obtain this key, create an account on Astrometry.net. Copy your API key and paste it into the configuration file.
+To obtain this key, create an account on [Astrometry.net](https://nova.astrometry.net/). Copy your API key and paste it into the configuration file.
 
 ### Running SAUSERO
 
@@ -139,3 +150,31 @@ E. __Final reduced science frames__:
 
 - By default, __SAUSERO__ ensures your data remains private when using Astrometry.net. The software's internal configuration avoids sharing any data with the Astrometry.net community, ensuring your data's security.
 
+## Project Structure
+
+    SAUSERO/
+        BPM/
+            BPM_OSIRIS_PLUS.fits -> BAD PIXEL MASK
+        config/
+            configuration.json   -> Configuration file.
+        aligning_osirisplus.py   -> Aligns the science frames. 
+        astrometry_osirisplus.py -> Astrometrization of the science frames.
+        Color_Codes.py           -> Gives color to the comments
+        OsirisDRP.py             -> Handles all the sofware and manages the frames. 
+        photometry_osirisplus.py -> Carries out the photometric calibration.
+        reduction_osirisplus.py  -> Carries out the clean process.
+
+## Note about the frames
+
+The code is designed to work with __OSIRIS+__ frames. They must be in __FITS__ format.
+
+## LICENSE
+
+This software is under __GPL v3.0__ license. More information is available in the
+repository.
+
+## CONTACT
+
+- __Email__: [fabricio.perez@gtc.iac.es](fabricio.perez@gtc.iac.es)
+
+- __Repository__: [https://github.com/Kennicutt/SAUSERO](https://github.com/Kennicutt/SAUSERO)

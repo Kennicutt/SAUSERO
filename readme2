@@ -67,15 +67,15 @@ astrometry.net.
 
 ## Note about the frames
 
-The code is designed to work with OSIRIS+ frames. They must be in FITS format.
+The code is designed to work with __OSIRIS+__ frames. They must be in __FITS__ format.
 
 ## LICENSE
 
-This software is under GPL v3.0 license. More information is available in the
+This software is under __GPL v3.0__ license. More information is available in the
 repository.
 
 ## CONTACT
 
-By e-mail: fabricio.perez@gtc.iac.es
+- __Email__: [fabricio.perez@gtc.iac.es](fabricio.perez@gtc.iac.es)
 
-Repository: https://github.com/Kennicutt/SAUSERO
+- __Repository__: [https://github.com/Kennicutt/SAUSERO](https://github.com/Kennicutt/SAUSERO)
