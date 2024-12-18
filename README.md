@@ -11,15 +11,15 @@ and I have to perform several operations to correct them before the analising st
 depend on the kind of observation. In this case, this software has been developed with the goal to prepare the 
 science frames for photometric studies. The correction steps are:
 
-    1. Application of Bad Pixel Mask to all frames.
-    2. Creation of Master Bias.
-    3. Creation of Master Flat.
-    4. Application of masters to STD star and science frames.
-    5. Remove the cosmic rays.
-    6. Sky subtraction.
-    7. Aligning science frames.
-    8. Astrometrization.
-    9. Flux calibration.
+1. Application of Bad Pixel Mask to all frames.
+2. Creation of Master Bias.
+3. Creation of Master Flat.
+4. Application of masters to STD star and science frames.
+5. Remove the cosmic rays.
+6. Sky subtraction.
+7. Aligning science frames.
+8. Astrometrization.
+9. Flux calibration.
 
 It requires bias frames, skyflat frames, photometric standard star frames and science frames.
 
@@ -34,17 +34,17 @@ Operative System: Any (it should run in conda enviroment).
 
 Dependencies:
 
-    astroalign>=2.4.1
-    astrometry_net_client>=0.3.0
-    astropy>=5.3.4
-    astroquery>=0.4.6
-    ccdproc>=2.4.1
-    lacosmic>=1.1.0
-    loguru>=0.7.2
-    matplotlib>=3.8.0
-    numpy>=1.25.2
-    PyYAML>=6.0.2
-    sep>=1.2.1
+astroalign>=2.4.1
+astrometry_net_client>=0.3.0
+astropy>=5.3.4
+astroquery>=0.4.6
+ccdproc>=2.4.1
+lacosmic>=1.1.0
+loguru>=0.7.2
+matplotlib>=3.8.0
+numpy>=1.25.2
+PyYAML>=6.0.2
+sep>=1.2.1
 
 Hardware: RAM 4 GB
 
@@ -69,8 +69,8 @@ You have to modify the configuration file which is placed in your home directory
 inside of a folder called as sausero. You need to fill some configuration parameters
 as:
 
-    1. "PATH_DATA": "/path/to/your/frames/"
-    2. "No_Session":"astrometry api key"
+1. "PATH_DATA": "/path/to/your/frames/"
+2. "No_Session":"astrometry api key"
 
 The first one will be the root directory. You should have concern for the standard
 structure. The directory with the frames must be as "<Your_Program>_<Your_OB>/".
@@ -87,14 +87,14 @@ again, it will run in this ocassion.
 About the results, you will find the your frame directory a new collection of the 
 frames. It will have:
 
-    A. Each science frame reduced, in other words, once the master bias and master
-    flat have been applied. Each frame is saved two time, one with sky and another
-    without sky.
-    B. Once aligned both cases.
-    C. They have after been applied the astrometrization.
-    D. A PNG file showing the sources in the FoV.
-    E. A PNG file showing the STD star.
-    F. Final reduced science frames with sky and without sky.
+A. Each science frame reduced, in other words, once the master bias and master
+flat have been applied. Each frame is saved two time, one with sky and another
+without sky.
+B. Once aligned both cases.
+C. They have after been applied the astrometrization.
+D. A PNG file showing the sources in the FoV.
+E. A PNG file showing the STD star.
+F. Final reduced science frames with sky and without sky.
 
 WARNING: By default, the internal configuration always avoid to share data with 
 the astrometry.net community. So that's why your data are safe using
@@ -102,17 +102,17 @@ astrometry.net.
 
 ## Project Structure
 
-SAUSERO/
-    BPM/
-        BPM_OSIRIS_PLUS.fits -> BAD PIXEL MASK
-    config/
-        configuration.json   -> Configuration file.
-    aligning_osirisplus.py   -> Aligns the science frames. 
-    astrometry_osirisplus.py -> Astrometrization of the science frames.
-    Color_Codes.py           -> Gives color to the comments
-    OsirisDRP.py             -> Handles all the sofware and manages the frames. 
-    photometry_osirisplus.py -> Carries out the photometric calibration.
-    reduction_osirisplus.py  -> Carries out the clean process.
+    SAUSERO/
+        BPM/
+            BPM_OSIRIS_PLUS.fits -> BAD PIXEL MASK
+        config/
+            configuration.json   -> Configuration file.
+        aligning_osirisplus.py   -> Aligns the science frames. 
+        astrometry_osirisplus.py -> Astrometrization of the science frames.
+        Color_Codes.py           -> Gives color to the comments
+        OsirisDRP.py             -> Handles all the sofware and manages the frames. 
+        photometry_osirisplus.py -> Carries out the photometric calibration.
+        reduction_osirisplus.py  -> Carries out the clean process.
 
 ## Note about the frames
 
