@@ -34,27 +34,27 @@ Operative System: Any (it should run in conda enviroment).
 
 Dependencies:
 
-astroalign>=2.4.1
-
-astrometry_net_client>=0.3.0
-
-astropy>=5.3.4
-
-astroquery>=0.4.6
-
-ccdproc>=2.4.1
-
-lacosmic>=1.1.0
-
-loguru>=0.7.2
-
-matplotlib>=3.8.0
-
-numpy>=1.25.2
-
-PyYAML>=6.0.2
-
-sep>=1.2.1
+  astroalign>=2.4.1
+  
+  astrometry_net_client>=0.3.0
+  
+  astropy>=5.3.4
+  
+  astroquery>=0.4.6
+  
+  ccdproc>=2.4.1
+  
+  lacosmic>=1.1.0
+  
+  loguru>=0.7.2
+  
+  matplotlib>=3.8.0
+  
+  numpy>=1.25.2
+  
+  PyYAML>=6.0.2
+  
+  sep>=1.2.1
 
 Hardware: RAM 4 GB
 
