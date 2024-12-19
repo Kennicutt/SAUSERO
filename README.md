@@ -6,7 +6,7 @@ Developed by __Fabricio M. Pérez-Toledo__
 
 ## General Description
 
-__S__oftware to __AU__omatize in a __S__imple __E__nvironment the __R__eduction of __O__siris+ data (SAUSERO) processes raw science frames to address noise, cosmetic defects, and pixel heterogeneity, preparing them for photometric studies. These corrections are essential before any analysis can be performed. The operations applied to the images depend on the type of observation. This software has been specifically designed to reduce and prepare science frames for photometric studies.
+**S**oftware to **AU**omatize in a **S**imple **E**nvironment the **R**eduction of **O**siris+ data (**SAUSERO**) processes raw science frames to address noise, cosmetic defects, and pixel heterogeneity, preparing them for photometric studies. These corrections are essential before any analysis can be performed. The operations applied to the images depend on the type of observation. This software has been specifically designed to reduce and prepare science frames for photometric studies.
 
 ### Key Reduction Steps:
 
