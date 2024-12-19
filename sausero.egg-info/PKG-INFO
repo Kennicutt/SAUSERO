@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: sausero
-Version: 0.1.1
+Version: 0.1.2
 Summary: This software is designed to reduce Broad Band Imaging observations obtained with OSIRIS+.
 Home-page: https://github.com/Kennicutt/SAUSERO
 Author: Fabricio M. Pérez-Toledo
@@ -20,7 +20,7 @@ Developed by __Fabricio M. Pérez-Toledo__
 
 ## General Description
 
-SAUSERO processes raw science frames to address noise, cosmetic defects, and pixel heterogeneity, preparing them for photometric studies. These corrections are essential before any analysis can be performed. The operations applied to the images depend on the type of observation. This software has been specifically designed to reduce and prepare science frames for photometric studies.
+**S**oftware to **AU**omatize in a **S**imple **E**nvironment the **R**eduction of **O**siris+ data (**SAUSERO**) processes raw science frames to address noise, cosmetic defects, and pixel heterogeneity, preparing them for photometric studies. These corrections are essential before any analysis can be performed. The operations applied to the images depend on the type of observation. This software has been specifically designed to reduce and prepare science frames for photometric studies.
 
 ### Key Reduction Steps:
 
