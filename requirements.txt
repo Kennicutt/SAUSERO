@@ -9,3 +9,5 @@ matplotlib==3.8.0
 numpy==1.25.2
 PyYAML==6.0.2
 sep==1.2.1
+sphinx
+sphinx-rtd-theme

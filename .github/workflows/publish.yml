@@ -1,0 +1,39 @@
+name: Publish Python Package
+
+# Define cuándo se ejecuta el flujo de trabajo
+on:
+  release:               # El flujo se ejecutará cuando se cree un nuevo release
+    types: [created]     # Solo cuando el release sea creado
+
+# Configura los trabajos (jobs) a ejecutar
+jobs:
+  publish:
+    runs-on: ubuntu-latest  # Elige un entorno Linux para ejecutar las tareas
+
+    steps:
+      # Paso 1: Clonar el código del repositorio
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      # Paso 2: Configurar Python en el entorno
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.x  # Define la versión de Python
+
+      # Paso 3: Instalar las dependencias necesarias
+      - name: Install dependencies
+        run: |
+          pip install build twine
+
+      # Paso 4: Construir el paquete
+      - name: Build package
+        run: python -m build
+
+      # Paso 5: Subir el paquete a PyPI
+      - name: Publish to PyPI
+        env:                    # Configura las variables de entorno para Twine
+          TWINE_USERNAME: __token__    # Nombre de usuario para PyPI (fijo: "__token__")
+          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}  # Token de PyPI almacenado en los secretos
+        run: |
+          python -m twine upload dist/*
