@@ -47,7 +47,8 @@ To address cosmetic defects, a __Bad Pixel Mask (BPM)__ is applied, and the __LA
 - __Any__: The software is designed to run within a __Conda environment__, ensuring compatibility across platforms.
 
 ### Dependencies
-The following Python packages are required (minimum versions specified):
+The following Python packages are required (minimum versions specified), however, they will be installed
+automatically together the :
 
     astroalign>=2.4.1
     astrometry_net_client>=0.3.0
@@ -78,8 +79,6 @@ Installing SAUSERO is straightforward. Follow these steps:
 
 That's it! SAUSERO is now ready to use.
 
-**ATTENTION**: The first time, the code will 'fail' because the configuration file does not know the root directory where the images are stored and the token for your astrometry-api-key. To fix this, follow the instructions below.
-
 ### Optional: Creating a New Conda Environment
 
 If you don’t have an existing Conda environment, you can create one specifically for SAUSERO with the following commands:
@@ -96,6 +95,8 @@ Once the Conda environment is set up, you can run __SAUSERO__ using the followin
 
 - `-pr`: Your GTC program indicator.
 - `-bl`: The observed block number.
+
+**ATTENTION**: The first time, the code will 'fail' because the configuration file does not know the root directory where the images are stored and the token for your astrometry-api-key. To fix this, follow the instructions below.
 
 ### First-Time Setup
 
