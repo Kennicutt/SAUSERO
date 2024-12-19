@@ -8,13 +8,13 @@ Author-email: fabricio.telescope@gmail.com
 Classifier: Programming Language :: Python :: 3
 Classifier: License :: OSI Approved :: GNU General Public License v3 (GPLv3)
 Classifier: Operating System :: OS Independent
-Requires-Python: >=3.8
+Requires-Python: >=3.9
 Description-Content-Type: text/markdown
 License-File: LICENSE
 
 # SAUSERO
 
-__SAUSERO__ is a reduction software for Broad Band Imaging mode of OSIRIS+.
+__SAUSERO__ is a reduction software for the Broad Band Imaging mode of OSIRIS+ GTC.
 
 Developed by __Fabricio M. Pérez-Toledo__
 
@@ -61,19 +61,20 @@ To address cosmetic defects, a __Bad Pixel Mask (BPM)__ is applied, and the __LA
 - __Any__: The software is designed to run within a __Conda environment__, ensuring compatibility across platforms.
 
 ### Dependencies
-The following Python packages are required (minimum versions specified):
+The following Python packages are required (minimum versions specified), however, they will be installed
+automatically together the :
 
--  `astroalign>=2.4.1`
--  `astrometry_net_client>=0.3.0`
--  `astropy>=5.3.4`
--  `astroquery>=0.4.6`
--  `ccdproc>=2.4.1`
--  `lacosmic>=1.1.0`
--  `loguru>=0.7.2`
--  `matplotlib>=3.8.0`
--  `numpy>=1.25.2`
--  `PyYAML>=6.0.2`
--  `sep>=1.2.1`
+    astroalign>=2.4.1
+    astrometry_net_client>=0.3.0
+    astropy>=5.3.4
+    astroquery>=0.4.6
+    ccdproc>=2.4.1
+    lacosmic>=1.1.0
+    loguru>=0.7.2
+    matplotlib>=3.8.0
+    numpy>=1.25.2
+    PyYAML>=6.0.2
+    sep>=1.2.1`
 
 ### Hardware Requirements
 - __RAM__: Minimum 4GB (higher is recommended for large datasets).
@@ -82,7 +83,7 @@ The following Python packages are required (minimum versions specified):
 
 Installing SAUSERO is straightforward. Follow these steps:
 
-1. __Activate your Conda environment__ (or create a new one if needed):
+1. __Activate your Conda environment__ (or create a new one if needed (see below)):
     ```
     conda activate <your_env>
 
@@ -109,11 +110,13 @@ Once the Conda environment is set up, you can run __SAUSERO__ using the followin
 - `-pr`: Your GTC program indicator.
 - `-bl`: The observed block number.
 
+**ATTENTION**: The first time, the code will 'fail' because the configuration file does not know the root directory where the images are stored and the token for your astrometry-api-key. To fix this, follow the instructions below.
+
 ### First-Time Setup
 
 The first time you run the command, it will fail because __SAUSERO__ needs to know the path to your frames.
 To resolve this, you must edit the configuration file, which is located in your home directory inside 
-a folder named `sausero`.
+a folder named `sausero/`.
 
 You need to set the following parameters in the configuration file:
 
