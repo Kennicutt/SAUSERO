@@ -1,6 +1,6 @@
 # SAUSERO
 
-__SAUSERO__ is a reduction software for Broad Band Imaging mode of OSIRIS+.
+__SAUSERO__ is a reduction software for the Broad Band Imaging mode of OSIRIS+ GTC.
 
 Developed by __Fabricio M. Pérez-Toledo__
 
@@ -49,17 +49,17 @@ To address cosmetic defects, a __Bad Pixel Mask (BPM)__ is applied, and the __LA
 ### Dependencies
 The following Python packages are required (minimum versions specified):
 
--  `astroalign>=2.4.1`
--  `astrometry_net_client>=0.3.0`
--  `astropy>=5.3.4`
--  `astroquery>=0.4.6`
--  `ccdproc>=2.4.1`
--  `lacosmic>=1.1.0`
--  `loguru>=0.7.2`
--  `matplotlib>=3.8.0`
--  `numpy>=1.25.2`
--  `PyYAML>=6.0.2`
--  `sep>=1.2.1`
+    astroalign>=2.4.1
+    astrometry_net_client>=0.3.0
+    astropy>=5.3.4
+    astroquery>=0.4.6
+    ccdproc>=2.4.1
+    lacosmic>=1.1.0
+    loguru>=0.7.2
+    matplotlib>=3.8.0
+    numpy>=1.25.2
+    PyYAML>=6.0.2
+    sep>=1.2.1`
 
 ### Hardware Requirements
 - __RAM__: Minimum 4GB (higher is recommended for large datasets).
@@ -77,6 +77,8 @@ Installing SAUSERO is straightforward. Follow these steps:
     pip install sausero
 
 That's it! SAUSERO is now ready to use.
+
+<span style="color: red">ATTENTION</span>: The first time, the code will 'fail' because the configuration file does not know the root directory where the images are stored and the token for your astrometry-api-key. To fix this, follow the instructions below.
 
 ### Optional: Creating a New Conda Environment
 
@@ -99,7 +101,7 @@ Once the Conda environment is set up, you can run __SAUSERO__ using the followin
 
 The first time you run the command, it will fail because __SAUSERO__ needs to know the path to your frames.
 To resolve this, you must edit the configuration file, which is located in your home directory inside 
-a folder named `sausero`.
+a folder named `sausero/`.
 
 You need to set the following parameters in the configuration file:
 
