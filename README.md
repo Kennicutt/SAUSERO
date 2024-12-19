@@ -68,7 +68,7 @@ The following Python packages are required (minimum versions specified):
 
 Installing SAUSERO is straightforward. Follow these steps:
 
-1. __Activate your Conda environment__ (or create a new one if needed):
+1. __Activate your Conda environment__ (or create a new one if needed (see below)):
     ```
     conda activate <your_env>
 
@@ -78,7 +78,7 @@ Installing SAUSERO is straightforward. Follow these steps:
 
 That's it! SAUSERO is now ready to use.
 
-<span style="color: red">ATTENTION</span>: The first time, the code will 'fail' because the configuration file does not know the root directory where the images are stored and the token for your astrometry-api-key. To fix this, follow the instructions below.
+<span style="color: red;">ATTENTION</span>: The first time, the code will 'fail' because the configuration file does not know the root directory where the images are stored and the token for your astrometry-api-key. To fix this, follow the instructions below.
 
 ### Optional: Creating a New Conda Environment
 
