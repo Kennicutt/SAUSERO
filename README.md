@@ -78,7 +78,7 @@ Installing SAUSERO is straightforward. Follow these steps:
 
 That's it! SAUSERO is now ready to use.
 
-{color="red"}ATTENTION{color="black"}: The first time, the code will 'fail' because the configuration file does not know the root directory where the images are stored and the token for your astrometry-api-key. To fix this, follow the instructions below.
+\textcolor{red}{ATTENTION}: The first time, the code will 'fail' because the configuration file does not know the root directory where the images are stored and the token for your astrometry-api-key. To fix this, follow the instructions below.
 
 ### Optional: Creating a New Conda Environment
 
