@@ -89,7 +89,7 @@ If you don’t have an existing Conda environment, you can create one specifical
 
 ## First-Time Setup
 
-Once Conda is set up, you should run __SAUSERO__ for the first time to create the file configuration.json that has to be configured.
+Once Conda is set up, you should run __SAUSERO__ for the first time to create the file `configuration.json` that has to be configured.
 
     sausero -pr <your_program> -bl <your_ob>
 
