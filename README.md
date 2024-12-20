@@ -1,6 +1,6 @@
 # SAUSERO
 
-__SAUSERO__ is a reduction software for the Broad Band Imaging mode of OSIRIS+ GTC.
+__SAUSERO__ is a reduction software for the Broad Band Imaging mode of OSIRIS+ at GTC.
 
 Developed by __Fabricio M. Pérez-Toledo__
 
@@ -65,7 +65,7 @@ automatically together the :
 ### Hardware Requirements
 - __RAM__: Minimum 4GB (higher is recommended for large datasets).
 
-## Instalation
+## Installation
 
 Installing SAUSERO is straightforward. Follow these steps:
 
@@ -77,7 +77,7 @@ Installing SAUSERO is straightforward. Follow these steps:
     ```
     pip install sausero
 
-That's it! SAUSERO is now ready to use.
+That's it! SAUSERO is now almost ready to use ;)
 
 ### Optional: Creating a New Conda Environment
 
@@ -87,21 +87,19 @@ If you don’t have an existing Conda environment, you can create one specifical
     conda activate sausero_env
     pip install sausero
 
-## Usage
+## First-Time Setup
 
-Once the Conda environment is set up, you can run __SAUSERO__ using the following command:
+Once Conda is set up, you should run __SAUSERO__ for the first time to create the file configuration.json that has to be configured.
 
     sausero -pr <your_program> -bl <your_ob>
 
 - `-pr`: Your GTC program indicator.
 - `-bl`: The observed block number.
 
-**ATTENTION**: The first time, the code will 'fail' because the configuration file does not know the root directory where the images are stored and the token for your astrometry-api-key. To fix this, follow the instructions below.
+**ATTENTION**: The first time, the code will 'fail' because the configuration file does not know the root 
+directory where the images are stored and your astrometry-api-key. To fix this, follow the instructions below.
 
-### First-Time Setup
-
-The first time you run the command, it will fail because __SAUSERO__ needs to know the path to your frames.
-To resolve this, you must edit the configuration file, which is located in your home directory inside 
+You must edit the configuration file, which is located in your home directory inside 
 a folder named `sausero/`.
 
 You need to set the following parameters in the configuration file:
@@ -122,9 +120,11 @@ a `raw/` folder where the original frames are stored. During execution, __SAUSER
 
 To obtain this key, create an account on [Astrometry.net](https://nova.astrometry.net/). Copy your API key and paste it into the configuration file.
 
-### Running SAUSERO
+## Running SAUSERO
 
 After updating and saving the configuration file, you can run the command again. This time, the software will execute successfully.
+
+    sausero -pr <your_program> -bl <your_ob>
 
 ### Outputs and Results
 
