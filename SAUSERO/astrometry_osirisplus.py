@@ -128,10 +128,10 @@ def solving_astrometry(PRG, OB, filt, conf, sky, calib_std = False):
 
     if calib_std:
         logger.info("Astrometry calibration for STD star")
-        LST_PATH_TO_FILE = glob.glob(root_path + PRG + '_' + OB + '/reduced/' + f'*std*.fits')
+        LST_PATH_TO_FILE = glob.glob(root_path + PRG + '_' + OB + '/reduced/' + f'*STD*.fits')
     else:
         logger.info("Astrometry calibration for science target")
-        LST_PATH_TO_FILE = [root_path + PRG + '_' + OB + '/reduced/' + f'aligned_result_{filt}_{sky}.fits']
+        LST_PATH_TO_FILE = [root_path + PRG + '_' + OB + '/reduced/' + f'{PRG}_{OB}_{filt}_stacked_{sky}.fits']
 
     PATH_TO_FILE = LST_PATH_TO_FILE[0]
 

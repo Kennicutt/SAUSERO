@@ -253,15 +253,17 @@ class Reduction:
 
 
 
-    def clean_target(self, *args):
+    def clean_target(self, value, masterbias, masterflat):
         """Applies the subtraction of the MasterBias and the division 
         by the normalized MasterFlat to the science images.
 
         Returns:
             list: List of cleaned science frames.
         """
-        value, masterbias, masterflat = args
+        #value, masterbias, masterflat = args
         ccd = self.get_each_data(self.DATA_DICT, value)
+        if masterflat is None:
+            masterflat = 1.0
         frames = [(fr - masterbias)/masterflat for fr in ccd]
         logger.info(f"Applied masterbias and masterflat on the frames for {value}.")
         return frames
@@ -317,7 +319,7 @@ class Reduction:
         those scientific images that have already been cleaned.
         """
         self.ic_r = ccdp.ImageFileCollection(self.PATH_RESULTS, keywords='*',
-                                             glob_include='red*')
+                                             glob_include='*red*') # He modificado el glob_include
         logger.info("Table with several reduced science frames is ready.")
 
 
@@ -376,9 +378,8 @@ class Reduction:
             logger.info(f"Masterflat has been created for {filt} filter.")
 
 
-
     def get_std(self, no_CRs=False, contrast_arg = 1.5, cr_threshold_arg = 5.,
-                neighbor_threshold_arg = 5. ):
+                neighbor_threshold_arg = 5., apply_flat=False):
         """
         This method processes the photometric calibration frames.
         """
@@ -386,9 +387,14 @@ class Reduction:
         logger.info("Processing photometric calibration frames.")
         for elem in lst_std:
             key, value = elem.split('+')
-            args = [elem, self.master_dict['bias'],
-                    self.master_dict['flat+' + value]] 
-            std = self.clean_target(*args)
+            
+            if apply_flat == False:
+                self.master_dict['flat+' + value] = None
+
+            #args = [elem, self.master_dict['bias'],
+            #        self.master_dict['flat+' + value]]
+            
+            std = self.clean_target(elem, self.master_dict['bias'],self.master_dict['flat+' + value])
             lst_sd = []
             for sd in std:
                 if no_CRs:
@@ -407,7 +413,7 @@ class Reduction:
 
 
     def get_target(self, no_CRs=False, contrast_arg = 1.5, cr_threshold_arg = 5.,
-                neighbor_threshold_arg = 5.):
+                neighbor_threshold_arg = 5., apply_flat = False):
         """
         This method cleans the science frames.
         """
@@ -415,9 +421,14 @@ class Reduction:
         logger.info("Processing science frames.")
         for elem in lst_target:
             key, value = elem.split('+')
-            args = [elem, self.master_dict['bias'],
-                    self.master_dict['flat+' + value]] 
-            target= self.clean_target(*args)
+            
+            if apply_flat == False:
+                self.master_dict['flat+' + value] = None
+            
+            #args = [elem, self.master_dict['bias'],
+            #        self.master_dict['flat+' + value]]
+             
+            target= self.clean_target(elem, self.master_dict['bias'],self.master_dict['flat+' + value])
             lst_tg = []
             for tg in target:
                 if no_CRs:
@@ -461,7 +472,6 @@ class Reduction:
         for elem in lst_target_keys:
             key, value = elem.split('+')
             lst_frames = self.target_dict['target+' + value]
-            #if len(lst_frames) != 0:
             cube = np.dstack(lst_frames)
             cube.sort(axis=2)
             im_avg = np.median(cube[:,:,:], axis=2)
@@ -477,13 +487,10 @@ class Reduction:
                 logger.info(f"List of science frames without sky for {value} created.")
             else:
                 logger.error("No defined option for key.")
-            #else:
-            #    print(f"ERROR: Target list for {value} is empty!!!")
-            #    continue
+            
 
 
-
-    def save_target(self, fringing=False, std=False, sky=False):
+    def save_target(self, fringing=False, std=False, sky=False, not_sky=False):
         """This method saves the images generated during the cleaning process and 
         adds information to the header to assist in future processes.
 
@@ -506,35 +513,38 @@ class Reduction:
             fnames = self.DATA_DICT[key]
 
             if key == 'target+Sloan_z' and fringing:
-                adjetive = 'fringe'
+                FRIGING = 'NO'
                 sky_status = 'SKY'
                 status='REDUCED'
                 imagetype='SCIENCE'
                 target = self.target_dict['fringe+Sloan_z']
                 logger.info("Science frames without fringe.")
             elif std:
-                adjetive = 'std'
+                FRIGING = 'YES'
                 sky_status = 'SKY'
                 status='REDUCED'
                 imagetype='STD'
                 filt = key.split('+')[1]
                 target= self.std_dict[key]
             elif sky:
-                adjetive = 'target'
+                FRIGING = 'YES'
                 sky_status = 'SKY'
                 status='REDUCED'
                 imagetype='SCIENCE'
                 filt = key.split('+')[1]
                 target= self.target_dict[key]
                 logger.info("Science frames WITH sky.")
-            else:
-                adjetive = 'target'
+            elif not_sky:
+                FRIGING = 'YES'
                 sky_status = 'NOSKY'
                 status='REDUCED'
                 imagetype='SCIENCE'
                 filt = key.split('+')[1]
                 target= self.target_dict['sky+'+ filt]
                 logger.info("Science frames WITHOUT sky.")
+            else:
+                logger.warning("No defined option for saving the frames.")
+                break
 
             for i in range(len(fnames)):
                 t = time.gmtime()
@@ -551,6 +561,11 @@ class Reduction:
                 hdul = fits.HDUList([primary_hdu])
 
                 filename = os.path.basename(fnames[i])
-                logger.info(f"Storing the frame: reduced_5sig_{adjetive}_{sky_status}_{filename} for {hd['FILTER2']}")
-                hdul.writeto(str(self.PATH_RESULTS / (f'reduced_5sig_{adjetive}_{sky_status}_' + filename)),
+                raw_name , __ = filename.split('.')
+                #logger.info(f"Storing the frame: reduced_5sig_{adjetive}_{sky_status}_{filename} for {hd['FILTER2']}")
+                #hdul.writeto(str(self.PATH_RESULTS / (f'reduced_5sig_{adjetive}_{sky_status}_' + filename)),
+                #            overwrite=True)
+
+                logger.info(f"Storing the frame: ADP_{imagetype}_{sky_status}_{raw_name} for {hd['FILTER2']}")
+                hdul.writeto(str(self.PATH_RESULTS / (f'ADP_{imagetype}_{sky_status}_{raw_name}_red.fits')),
                             overwrite=True)

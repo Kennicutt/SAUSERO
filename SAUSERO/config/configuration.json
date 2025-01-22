@@ -1,38 +1,40 @@
 {
-    "DIRECTORIES":{
-        "PATH_DATA": ""
+    "DIRECTORIES": {
+        "PATH_DATA": "/home/fabricio.perez/Frames/"
     },
-
-    "REDUCTION":{
-        "no_CRs":true,
-        "contrast":1.5,
+    "REDUCTION": {
+        "use_BIAS": true,
+        "use_FLAT": true,
+        "use_STD": true,
+        "no_CRs": false,
+        "contrast": 1.5,
         "cr_threshold": 5.0,
-        "neighbor_threshold":5.0,
-        "save_std":true,
-        "save_sky":true,
-        "save_fringing":false
+        "neighbor_threshold": 5.0,
+        "save_std": true,
+        "save_sky": true,
+        "save_not_sky": false,
+        "save_fringing": false
     },
-
-    "ALIGNING":{
-        "max_control_points":60
+    "ALIGNING": {
+        "use_aligning": true,
+        "max_control_points": 60
     },
-
-    "ASTROMETRY":{
-        "No_Session":"",
-        "set_scale_estimate":{
-            "scale":0.254,
-            "unknown":10,
-            "scale_units":"arcsecperpix"
+    "ASTROMETRY": {
+        "use_astrometry": true,
+        "No_Session": "uavfufvkzrfjsplg",
+        "set_scale_estimate": {
+            "scale": 0.254,
+            "unknown": 10,
+            "scale_units": "arcsecperpix"
         },
-        "radius":0.1,
-        "downsample_factor":2.0,
-        "use_sextractor":true,
-        "crpix_center":true,
-        "parity":1
+        "radius": 0.1,
+        "downsample_factor": 2.0,
+        "use_sextractor": true,
+        "crpix_center": true,
+        "parity": 1
     },
-
-    "PHOTOMETRY":{
-        "threshold":5.0
+    "PHOTOMETRY": {
+        "use_photometry": true,
+        "threshold": 5.0
     }
-
 }

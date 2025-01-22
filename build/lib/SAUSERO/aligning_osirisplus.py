@@ -48,8 +48,8 @@ class OsirisAlign:
         self.block = block
         self.reduced_data_directory = "reduced"
         self.PATH_REDUCED = Path(self.PATH + self.program + "_" + self.block + "/" + "reduced/")
-        self.PATH_TARGET = Path(self.PATH + self.program + "_" + self.block + "/" + "object/")
-        self.ic = ccdp.ImageFileCollection(self.PATH_REDUCED, keywords='*', glob_include='red*')
+        #self.PATH_TARGET = Path(self.PATH + self.program + "_" + self.block + "/" + "object/")
+        self.ic = ccdp.ImageFileCollection(self.PATH_REDUCED, keywords='*', glob_include='ADP*')
 
 
     def load_frames(self, filt, sky):
