@@ -176,8 +176,12 @@ you need to fill in the correct variable.")
     PRG = args.program
     OB = args.block
 
-    config_path = pkg_resources.resource_filename(
-        'SAUSERO', 'config/configuration.json')
+    if os.path.exists(f"{os.path.expanduser('~')}/sausero/configuration.json"):
+        config_path = f"{os.path.expanduser('~')}/sausero/configuration.json"
+    else:
+        config_path = pkg_resources.resource_filename(
+                'SAUSERO', 'config/configuration.json')
+    
     check_files(config_path, PRG, OB)
 
     hora_local = time.localtime()
