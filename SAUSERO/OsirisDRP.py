@@ -12,12 +12,12 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-Copyright (C) 2024 Gran Telescopio Canarias <https://www.gtc.iac.es>
+Copyright (C) 2025 Gran Telescopio Canarias <https://www.gtc.iac.es>
 Fabricio Manuel Pérez Toledo <fabricio.perez@gtc.iac.es>
 """
 
 __author__="Fabricio Manuel Pérez Toledo"
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 __license__ = "GPL v3.0"
 
 from SAUSERO.check_files import *

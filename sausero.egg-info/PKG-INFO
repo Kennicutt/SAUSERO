@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: sausero
-Version: 0.2.0
+Version: 0.2.1
 Summary: This software is designed to reduce Broad Band Imaging observations obtained with OSIRIS+.
 Home-page: https://github.com/Kennicutt/SAUSERO
 Author: Fabricio M. Pérez-Toledo
@@ -11,6 +11,17 @@ Classifier: Operating System :: OS Independent
 Requires-Python: >=3.9
 Description-Content-Type: text/markdown
 License-File: LICENSE
+Requires-Dist: astroalign
+Requires-Dist: astrometry_net_client
+Requires-Dist: astropy
+Requires-Dist: astroquery
+Requires-Dist: ccdproc
+Requires-Dist: lacosmic
+Requires-Dist: loguru
+Requires-Dist: matplotlib
+Requires-Dist: numpy
+Requires-Dist: PyYAML
+Requires-Dist: sep
 
 # SAUSERO
 
