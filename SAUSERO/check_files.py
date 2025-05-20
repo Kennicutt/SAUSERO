@@ -51,7 +51,7 @@ def classify_images(tab):
 
     #Special case for OsirisBroadBandImage
 
-    if ('OsirisBroadBandImage' in tab['OBSMODE']) and ('OPEN' in tab['FILTER2']):
+    if 'OsirisBroadBandImage' in tab['OBSMODE'] and ('Clear' in tab['FILTER2'] or 'CLEAR' in tab['FILTER2']):
         existence['exist_STD'] = False
         existence['exist_SCIENCE'] = True
     

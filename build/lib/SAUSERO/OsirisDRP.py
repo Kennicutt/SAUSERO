@@ -17,14 +17,14 @@ Fabricio Manuel Pérez Toledo <fabricio.perez@gtc.iac.es>
 """
 
 __author__="Fabricio Manuel Pérez Toledo"
-__version__ = "0.2.1"
+__version__ = "0.2.2"
 __license__ = "GPL v3.0"
 
-from SAUSERO.check_files import *
-from SAUSERO.reduction_osirisplus import *
-from SAUSERO.aligning_osirisplus import *
-from SAUSERO.astrometry_osirisplus import *
-from SAUSERO.photometry_osirisplus import *
+from check_files import *
+from reduction_osirisplus import *
+from aligning_osirisplus import *
+from astrometry_osirisplus import *
+from photometry_osirisplus import *
 
 from astropy import units as u
 
@@ -32,7 +32,7 @@ import argparse, time, os, shutil
 import os, json, warnings
 import pkg_resources
 
-from SAUSERO.Color_Codes import bcolors as bcl
+from Color_Codes import bcolors as bcl
 from loguru import logger
 
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -69,7 +69,6 @@ directory for easier accessibility. Navigate to this directory to modify the pat
 the images to be processed. Once the modifications are made, you can start using SAUSERO.{bcl.ENDC}")
         sys.exit()
 
-
 def readJSON():
     """
     Reads the file containing the configuration parameters.
@@ -84,6 +83,7 @@ def readJSON():
             'SAUSERO', 'config/configuration.json')
         #return json.load(open("SAUSERO/config/configuration.json"))
         return json.load(open(config_path))
+
     
 
 def Results(PATH, ZP, eZP, MASK, filt, ext_info = extinction_dict, conf = None):
@@ -115,15 +115,16 @@ def Results(PATH, ZP, eZP, MASK, filt, ext_info = extinction_dict, conf = None):
             logger.info('Extinction information added to header')
             frame.header = hd
             frame.unit = u.adu/u.second
-            logger.info('Change units: ADUs to ADUs/second')
             hd['PHOTOMETRY'] = (True, 'Photometry applied')
+            logger.info('Change units: ADUs to ADUs/second')
 
             frame.data = (frame.data / hd['EXPTIME'])
-            frame.write(PATH / f"{hd['GTCPRGID']}_{hd['GTCOBID']}_{filt}_{(hd['DATE'].split('T')[0]).replace('-','')}_{sky}_BBI.fits",
+            frame.write(PATH / f"{hd['GTCPRGID']}_{hd['GTCOBID']}_{filt}_pho_{sky}.fits",
                         overwrite=True)
-            logger.info(f"Frame generated: {hd['GTCPRGID']}_{hd['GTCOBID']}_{filt}_{(hd['DATE'].split('T')[0]).replace('-','')}_{sky}_BBI.fits")
+            logger.info(f"Frame generated: {hd['GTCPRGID']}_{hd['GTCOBID']}_pho_{sky}.fits")
         else:
             logger.warning(f'{bcl.WARNING}¡¡¡¡¡¡¡ The photometry is not going to be executed for NOSKY!!!!!!!{bcl.ENDC}')
+    
 
 def run():
     """
@@ -176,13 +177,8 @@ you need to fill in the correct variable.")
     PRG = args.program
     OB = args.block
 
-    if os.path.exists(f"{os.path.expanduser('~')}/sausero/configuration.json"):
-        config_path = f"{os.path.expanduser('~')}/sausero/configuration.json"
-    else:
-        config_path = pkg_resources.resource_filename(
-                'SAUSERO', 'config/configuration.json')
-    
-    check_files(config_path, PRG, OB)
+    ########## Checking files (2025-01-22) ##########
+    check_files(pkg_resources.resource_filename('SAUSERO', 'config/configuration.json'), PRG, OB)
 
     hora_local = time.localtime()
     conf = readJSON()
@@ -195,8 +191,7 @@ you need to fill in the correct variable.")
     #Subsequently, the cleaned images are saved.
     logger.info(f'{bcl.HEADER}---------- Starting the reduction ----------{bcl.ENDC}')
     logger.info("Configuration updated successfully.")
-    bpm_path = pkg_resources.resource_filename(
-        'SAUSERO', 'BPM/BPM_OSIRIS_PLUS.fits')
+    bpm_path = pkg_resources.resource_filename('SAUSERO', 'BPM/BPM_OSIRIS_PLUS.fits')
     o = Reduction(PRG, OB, main_path=conf['DIRECTORIES']['PATH_DATA'],
                 path_mask=bpm_path)
     o.get_imagetypes()
@@ -264,7 +259,7 @@ you need to fill in the correct variable.")
                 else:
                     logger.warning(f'{bcl.WARNING}: Alignment is not going to be executed for NOSKY{bcl.ENDC}')
 
-        print(f'{bcl.HEADER}¡¡¡¡¡¡¡ The alignment for each filter is finished !!!!!!!{bcl.ENDC}')
+        print(f'{bcl.HEADER}¡¡¡¡¡¡¡ El alineado para cada filtro finalizado !!!!!!!{bcl.ENDC}')
         print(2*"\n")
     else:
         logger.warning(f'{bcl.WARNING}¡¡¡¡¡¡¡ The alignment is not going to be executed !!!!!!!{bcl.ENDC}')
@@ -278,20 +273,35 @@ you need to fill in the correct variable.")
         lst_filt = list(ic_ast.summary['filtro'])
         for filt in lst_filt:
             logger.info(f'{bcl.WARNING}++++++++++ Astrometrization for {filt} ++++++++++{bcl.ENDC}')
-            best_wcs, new_frame = solving_astrometry(PRG, OB, filt, conf, sky='SKY', calib_std=False)
+            try:
+                best_wcs, new_frame = solving_astrometry(PRG, OB, filt, conf, sky='SKY', calib_std=False)
+            except:
+                logger.warning(f'{bcl.WARNING}¡¡¡¡¡¡¡ Astrometrization failed for {filt} !!!!!!!{bcl.ENDC}')
+                best_wcs = None
             for sky in ['SKY', 'NOSKY']:
                 if sky == 'SKY':
-                    new_frame.header['ASTROMETRY'] = (True, 'Astrometrized image')
-                    new_frame.write(al.PATH_REDUCED / f'{PRG}_{OB}_{filt}_ast_SKY.fits', overwrite=True)
+                    if best_wcs is not None:
+                        new_frame.header['ASTROMETRY'] = (True, 'Astrometrized image')
+                        new_frame.write(al.PATH_REDUCED / f'{PRG}_{OB}_{filt}_ast_SKY.fits', overwrite=True)
+                    else:
+                        new_frame.header['ASTROMETRY'] = (False, 'Astrometrized image')
+                        new_frame.write(al.PATH_REDUCED / f'{PRG}_{OB}_{filt}_ast_SKY.fits', overwrite=True)
+                        logger.warning(f'{bcl.ERROR}¡¡¡¡¡¡¡ Astrometrization failed for {filt} !!!!!!!{bcl.ENDC}')
                 else:
                     if conf['REDUCTION']['save_not_sky']:
                         nosky = CCDData.read(al.PATH_REDUCED / f'{PRG}_{OB}_{filt}_stacked_NOSKY.fits', unit='adu')
-                        nosky.wcs = WCS(best_wcs)
-                        nosky.header['ASTROMETRY'] = (True, 'Astrometrized image')
-                        nosky.write(al.PATH_REDUCED / f'{PRG}_{OB}_{filt}_ast_NOSKY.fits', overwrite=True)
+                        if best_wcs is not None:
+                            nosky.wcs = WCS(best_wcs)
+                            nosky.header['ASTROMETRY'] = (True, 'Astrometrized image')
+                            nosky.write(al.PATH_REDUCED / f'{PRG}_{OB}_{filt}_ast_NOSKY.fits', overwrite=True)
+                        else:
+                            nosky.wcs = nosky.wcs
+                            nosky.header['ASTROMETRY'] = (False, 'Astrometrized image')
+                            nosky.write(al.PATH_REDUCED / f'{PRG}_{OB}_{filt}_ast_NOSKY.fits', overwrite=True)
+                            logger.warning(f'{bcl.ERROR}¡¡¡¡¡¡¡ Astrometrization failed for {filt} !!!!!!!{bcl.ENDC}')
                     else:
                         logger.warning(f'{bcl.WARNING}¡¡¡¡¡¡¡ The astrometry is not going to be executed for NOSKY !!!!!!!{bcl.ENDC}')
-                
+
                 print(f'{bcl.HEADER}¡¡¡¡¡¡¡ Astrometrization done successfully for {filt} !!!!!!!{bcl.ENDC}')
                 time.sleep(10)
     else:
@@ -301,13 +311,26 @@ you need to fill in the correct variable.")
         logger.info(f'{bcl.HEADER}---------- Start astrometrization for STD star ----------{bcl.ENDC}')
         time.sleep(30)
         ic_std = ccdp.ImageFileCollection(al.PATH_REDUCED, keywords='*', glob_include='*STD*', glob_exclude='*NOSKY*')
-        best_wcs_std, new_frame_std = solving_astrometry(PRG, OB, filt, conf, sky='SKY', calib_std=True)
+        lst_object = list(set(ic_std.summary['object']))
+        try:
+            best_wcs_std, new_frame_std = solving_astrometry(PRG, OB, filt, conf, sky='SKY', calib_std=True)
+        except:
+            logger.warning(f'{bcl.WARNING}¡¡¡¡¡¡¡ Astrometrization failed for STD star !!!!!!!{bcl.ENDC}')
+            best_wcs_std = None
         for path_to_std in ic_std.files_filtered(include_path=True):
             logger.info(f'{bcl.WARNING}++++++++++ Astrometrization for: {path_to_std} ++++++++++{bcl.ENDC}')
             std_img = CCDData.read(path_to_std, unit='adu')
-            std_img.wcs = WCS(best_wcs_std)
-            std_img.header['ASTROMETRY'] = (True, 'Astrometrized image')
-            std_img.write(path_to_std, overwrite=True)
+            if best_wcs_std is not None:
+                std_img.wcs = WCS(best_wcs_std)
+                std_img.header['ASTROMETRY'] = (True, 'Astrometrized image')
+                std_img.write(path_to_std, overwrite=True)
+                logger.info(f'{bcl.HEADER}¡¡¡¡¡¡¡ Astrometrization done successfully for STD star !!!!!!!{bcl.ENDC}')
+            else:
+                std_img.wcs = std_img.wcs
+                std_img.header['ASTROMETRY'] = (False, 'Astrometrized image')
+                std_img.write(path_to_std, overwrite=True)
+                logger.warning(f'{bcl.ERROR}¡¡¡¡¡¡¡ Astrometrization failed for STD star !!!!!!!{bcl.ENDC}')
+
 
 
         print(f'{bcl.HEADER}¡¡¡¡¡¡¡ Astrometrization finished !!!!!!!{bcl.ENDC}')
@@ -323,12 +346,19 @@ you need to fill in the correct variable.")
     if conf['PHOTOMETRY']['use_photometry']:
         logger.info(f"{bcl.HEADER}---------- Starting the estimation of ZeroPoint ----------{bcl.ENDC}")
         del filt
-        ic_pho = ccdp.ImageFileCollection(al.PATH_REDUCED, keywords='*', glob_include='*red*')
+        ic_pho = ccdp.ImageFileCollection(al.PATH_REDUCED, keywords='*', glob_include='*ADP*')
         lst_filt = list(set(ic_pho.summary['filtro']))
         for filt in lst_filt:
+            if filt == "OPEN":
+                continue
             logger.info(f'{bcl.WARNING}++++++++++ Filter selected is {filt} ++++++++++{bcl.ENDC}')
-            ZP, eZP = photometry(PRG, OB, ic_pho.files_filtered(imgtype='STD',filter2=filt)[0], conf)
-            Results(al.PATH_REDUCED, ZP, eZP, o.MASK, filt, conf = conf)
+            try:
+                ZP, eZP = photometry(PRG, OB, ic_pho.files_filtered(imgtype='STD',filter2=filt)[0], conf)
+                Results(al.PATH_REDUCED, ZP, eZP, o.MASK, filt, conf=conf)
+            except:
+                logger.warning(f'{bcl.WARNING}¡¡¡¡¡¡¡ Photometry failed for {filt} !!!!!!!{bcl.ENDC}')
+                ZP, eZP = None, None
+                Results(al.PATH_REDUCED, ZP, eZP, o.MASK, filt, conf=conf)
 
         logger.info(f'{bcl.HEADER}¡¡¡¡¡¡¡ End of the reduction. The results are available in reduced directory. !!!!!!!{bcl.ENDC}')
     else:

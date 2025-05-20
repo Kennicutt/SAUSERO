@@ -30,7 +30,7 @@ import yaml as py
 import lacosmic
 import sep
 
-from SAUSERO.Color_Codes import bcolors as bcl
+from Color_Codes import bcolors as bcl
 from loguru import logger
 
 #logger = logging.getLogger("main_logger")
@@ -280,6 +280,10 @@ class Reduction:
         matches1 = (self.ic.summary['obsmode'] != 'OsirisBias') & (self.ic.summary['filter1'] != 'OPEN')
         matches2 = (self.ic.summary['obsmode'] != 'OsirisBias') & (self.ic.summary['filter2'] != 'OPEN')
         matches3 = (self.ic.summary['obsmode'] != 'OsirisBias') & (self.ic.summary['filter3'] != 'OPEN')
+        matches4 = (self.ic.summary['obsmode'] != 'OsirisBias') & (self.ic.summary['filter3'] == 'OPEN')\
+        & (self.ic.summary['filter2'] == 'OPEN') & (self.ic.summary['filter1'] == 'OPEN')\
+        & (self.ic.summary['filter4'] == 'OPEN')
+        
 
         if len(list(set(self.ic.summary['filter1'][matches1]))) >= 1:
             self.filt_wheels.append('filter1')
@@ -287,8 +291,10 @@ class Reduction:
             self.filt_wheels.append('filter2')
         elif len(list(set(self.ic.summary['filter3'][matches3]))) >= 1:
             self.filt_wheels.append('filter3')
+        elif len(list(set(self.ic.summary['filter4'][matches4]))) >= 1:
+            self.filt_wheels.append('filter4')
         else:
-            raise(ValueError, "All filters are open!!!")
+            raise(ValueError, "Incompatible filter setup!!!")
             sys.exit()
 
         for filt in self.filt_wheels:
@@ -319,7 +325,7 @@ class Reduction:
         those scientific images that have already been cleaned.
         """
         self.ic_r = ccdp.ImageFileCollection(self.PATH_RESULTS, keywords='*',
-                                             glob_include='*red*') # He modificado el glob_include
+                                             glob_include='red*')
         logger.info("Table with several reduced science frames is ready.")
 
 
@@ -369,13 +375,19 @@ class Reduction:
         This method creates the master flat frame for each filter.
         """
         lst_flat = [elem for elem in list(self.DATA_DICT.keys()) if 'flat' in elem]
+        #if not lst_flat == []:
         for filt in lst_flat:
+            if 'flat+OPEN' in filt:
+                continue
             flat = self.sustractMasterBias(filt, self.masterbias, self.DATA_DICT)
             combflat = self.combining(flat)
             median = np.nanmedian(combflat)
             masterflat = combflat/median
             self.master_dict[filt] = masterflat
             logger.info(f"Masterflat has been created for {filt} filter.")
+        #else:
+        #    logger.error("No flat frames found.")
+        #    self.conf['STEPS']['FLAT'] = False
 
 
     def get_std(self, no_CRs=False, contrast_arg = 1.5, cr_threshold_arg = 5.,
@@ -386,6 +398,9 @@ class Reduction:
         lst_std = [elem for elem in list(self.DATA_DICT.keys()) if 'std' in elem]
         logger.info("Processing photometric calibration frames.")
         for elem in lst_std:
+            if 'std+OPEN' in elem:
+                continue
+
             key, value = elem.split('+')
             
             if apply_flat == False:
@@ -393,8 +408,9 @@ class Reduction:
 
             #args = [elem, self.master_dict['bias'],
             #        self.master_dict['flat+' + value]]
-            
+        
             std = self.clean_target(elem, self.master_dict['bias'],self.master_dict['flat+' + value])
+            #std = self.clean_target(*args)
             lst_sd = []
             for sd in std:
                 if no_CRs:
@@ -413,7 +429,7 @@ class Reduction:
 
 
     def get_target(self, no_CRs=False, contrast_arg = 1.5, cr_threshold_arg = 5.,
-                neighbor_threshold_arg = 5., apply_flat = False):
+                neighbor_threshold_arg = 5., apply_flat=False):
         """
         This method cleans the science frames.
         """
@@ -422,13 +438,14 @@ class Reduction:
         for elem in lst_target:
             key, value = elem.split('+')
             
-            if apply_flat == False:
+            if (apply_flat == False) or (value == 'OPEN'):
                 self.master_dict['flat+' + value] = None
             
             #args = [elem, self.master_dict['bias'],
             #        self.master_dict['flat+' + value]]
              
             target= self.clean_target(elem, self.master_dict['bias'],self.master_dict['flat+' + value])
+            #target= self.clean_target(*args)
             lst_tg = []
             for tg in target:
                 if no_CRs:
@@ -472,6 +489,7 @@ class Reduction:
         for elem in lst_target_keys:
             key, value = elem.split('+')
             lst_frames = self.target_dict['target+' + value]
+            #if len(lst_frames) != 0:
             cube = np.dstack(lst_frames)
             cube.sort(axis=2)
             im_avg = np.median(cube[:,:,:], axis=2)
@@ -487,7 +505,10 @@ class Reduction:
                 logger.info(f"List of science frames without sky for {value} created.")
             else:
                 logger.error("No defined option for key.")
-            
+            #else:
+            #    print(f"ERROR: Target list for {value} is empty!!!")
+            #    continue
+
 
 
     def save_target(self, fringing=False, std=False, sky=False, not_sky=False):
@@ -509,25 +530,28 @@ class Reduction:
             logger.info("Saving science frames reduced.")
             lst_results = [elem for elem in list(self.DATA_DICT.keys()) if 'std' in elem]
 
+        if 'std+OPEN' in lst_results:
+            lst_results.remove('std+OPEN')
+
         for key in lst_results:
             fnames = self.DATA_DICT[key]
 
             if key == 'target+Sloan_z' and fringing:
-                FRIGING = 'NO'
+                FRINGING = 'NO'
                 sky_status = 'SKY'
                 status='REDUCED'
                 imagetype='SCIENCE'
                 target = self.target_dict['fringe+Sloan_z']
                 logger.info("Science frames without fringe.")
             elif std:
-                FRIGING = 'YES'
+                FRINGING = 'YES'
                 sky_status = 'SKY'
                 status='REDUCED'
                 imagetype='STD'
                 filt = key.split('+')[1]
                 target= self.std_dict[key]
             elif sky:
-                FRIGING = 'YES'
+                FRINGING = 'YES'
                 sky_status = 'SKY'
                 status='REDUCED'
                 imagetype='SCIENCE'
@@ -535,7 +559,7 @@ class Reduction:
                 target= self.target_dict[key]
                 logger.info("Science frames WITH sky.")
             elif not_sky:
-                FRIGING = 'YES'
+                FRINGING = 'YES'
                 sky_status = 'NOSKY'
                 status='REDUCED'
                 imagetype='SCIENCE'
@@ -566,6 +590,6 @@ class Reduction:
                 #hdul.writeto(str(self.PATH_RESULTS / (f'reduced_5sig_{adjetive}_{sky_status}_' + filename)),
                 #            overwrite=True)
 
-                logger.info(f"Storing the frame: ADP_{imagetype}_{sky_status}_{raw_name} for {hd['FILTER2']}")
-                hdul.writeto(str(self.PATH_RESULTS / (f'ADP_{imagetype}_{sky_status}_{raw_name}_red.fits')),
+                logger.info(f"Storing the frame: ADP_{raw_name}_{imagetype}_{sky_status} for {hd['FILTER2']}")
+                hdul.writeto(str(self.PATH_RESULTS / (f'ADP_{raw_name}_{imagetype}_{sky_status}.fits')),
                             overwrite=True)

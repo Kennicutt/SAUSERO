@@ -12,6 +12,7 @@ SAUSERO/photometry_osirisplus.py
 SAUSERO/reduction_osirisplus.py
 SAUSERO/BPM/BPM_OSIRIS_PLUS.fits
 SAUSERO/config/configuration.json
+SAUSERO/config/photometric_standards.json
 sausero.egg-info/PKG-INFO
 sausero.egg-info/SOURCES.txt
 sausero.egg-info/dependency_links.txt

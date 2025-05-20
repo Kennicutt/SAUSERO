@@ -25,7 +25,7 @@ import time
 import matplotlib.pyplot as plt
 from astropy.visualization import LogStretch,imshow_norm, ZScaleInterval
 
-from SAUSERO.Color_Codes import bcolors as bcl
+from Color_Codes import bcolors as bcl
 from loguru import logger
 
 
@@ -149,7 +149,7 @@ def show_picture(cube, a=1):
     fig.colorbar(im)
     plt.show()
     
-def save_fits(image, header, wcs, fname):
+def save_fits(image, header, wcs, fname, allow_nosky=True):
     """This method saves the stacked image.
 
     Args:
@@ -158,6 +158,7 @@ def save_fits(image, header, wcs, fname):
         wcs (str): WCS information for the stacked image.
         fname (str): Name for the stacked image.
     """
+    header['STACKED'] = 'YES'
     ccd = CCDData(data=image, header=header, wcs=wcs, unit='adu')
     ccd.write(fname, overwrite=True)
     logger.info(f"New image has been created: {fname}")
