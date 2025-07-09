@@ -22,7 +22,7 @@ from astropy.nddata import CCDData
 from astropy.wcs import WCS
 from astrometry_net_client import Session, FileUpload, Settings
 
-from Color_Codes import bcolors as bcl
+from SAUSERO.Color_Codes import bcolors as bcl
 from loguru import logger
 
 def settings(PATH_TO_CONFIG_FILE):

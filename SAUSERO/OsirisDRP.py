@@ -17,14 +17,14 @@ Fabricio Manuel Pérez Toledo <fabricio.perez@gtc.iac.es>
 """
 
 __author__="Fabricio Manuel Pérez Toledo"
-__version__ = "0.2.2"
+__version__ = "0.2.3"
 __license__ = "GPL v3.0"
 
-from check_files import *
-from reduction_osirisplus import *
-from aligning_osirisplus import *
-from astrometry_osirisplus import *
-from photometry_osirisplus import *
+from SAUSERO.check_files import *
+from SAUSERO.reduction_osirisplus import *
+from SAUSERO.aligning_osirisplus import *
+from SAUSERO.astrometry_osirisplus import *
+from SAUSERO.photometry_osirisplus import *
 
 from astropy import units as u
 
@@ -32,7 +32,7 @@ import argparse, time, os, shutil
 import os, json, warnings
 import pkg_resources
 
-from Color_Codes import bcolors as bcl
+from SAUSERO.Color_Codes import bcolors as bcl
 from loguru import logger
 
 warnings.filterwarnings("ignore", category=UserWarning)

@@ -27,7 +27,7 @@ from astropy.coordinates import FK5
 from astropy.visualization import LogStretch,imshow_norm, ZScaleInterval
 from matplotlib.patches import Ellipse
 
-from Color_Codes import bcolors as bcl
+from SAUSERO.Color_Codes import bcolors as bcl
 from loguru import logger
 import pkg_resources
 

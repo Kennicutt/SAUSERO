@@ -30,7 +30,7 @@ import yaml as py
 import lacosmic
 import sep
 
-from Color_Codes import bcolors as bcl
+from SAUSERO.Color_Codes import bcolors as bcl
 from loguru import logger
 
 #logger = logging.getLogger("main_logger")
