@@ -16,13 +16,29 @@ Copyright (C) 2025 Gran Telescopio Canarias <https://www.gtc.iac.es>
 Fabricio Manuel Pérez Toledo <fabricio.perez@gtc.iac.es>
 """
 
-import json
+import json, os
+import pkg_resources
 import ccdproc as ccdp
 
 def read_config(config_path):
     with open(config_path, 'r') as file:
         config = json.load(file)
     return config
+
+def readJSON():
+    """
+    Reads the file containing the configuration parameters.
+
+    Returns:
+        json: Collection of configuration parameters 
+    """
+    if os.path.exists(f"{os.path.expanduser('~')}/sausero/configuration.json"):
+        return json.load(open(f"{os.path.expanduser('~')}/sausero/configuration.json"))
+    else:
+        config_path = pkg_resources.resource_filename(
+            'SAUSERO', 'config/configuration.json')
+        #return json.load(open("SAUSERO/config/configuration.json"))
+        return json.load(open(config_path))
 
 
 def update_config(config_path, config):
@@ -60,7 +76,7 @@ def classify_images(tab):
 
 def check_files(config_path, PRG, OB):
 
-    conf = read_config(config_path)
+    conf = readJSON()#read_config(config_path)
     directory = conf['DIRECTORIES']['PATH_DATA'] + f"{PRG}_{OB}/raw/"
 
     ic = ccdp.ImageFileCollection(directory, keywords=['OBSMODE','OBJECT','FILTER2','EXPTIME'])
