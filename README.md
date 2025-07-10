@@ -6,7 +6,7 @@ Developed by __Fabricio M. Pérez-Toledo__
 
 ## General Description
 
-**S**oftware to **AU**omatize in a **S**imple **E**nvironment the **R**eduction of **O**siris+ data (**SAUSERO**) processes raw science frames to address noise, cosmetic defects, and pixel heterogeneity, preparing them for photometric studies. These corrections are essential before any analysis can be performed. The operations applied to the images depend on the type of observation. This software has been specifically designed to reduce and prepare science frames for photometric studies.
+**S**oftware to **AU**omatize in a **S**imple **E**nvironment the **R**eduction of **O**siris+ data (**SAUSERO**) processes OSIRIS+ raw science frames to address noise, cosmetic defects, and pixel heterogeneity, preparing them for photometric analysis. Correcting these artifacts is a critical prerequisite for reliable scientific analysis. The software applies observation-specific reduction steps, ensuring optimized treatment for different data types. Developed with a focus on simplicity and efficiency, **SAUSERO** streamlines the reduction pipeline, enabling researchers to obtain calibrated data ready for photometric studies.
 
 ### Key Reduction Steps:
 
@@ -160,6 +160,7 @@ E. __Final reduced science frames__:
             BPM_OSIRIS_PLUS.fits -> BAD PIXEL MASK
         config/
             configuration.json   -> Configuration file.
+        check_files.py           -> It determines which steps can be performed by the pipeline based on the available FITS files.
         aligning_osirisplus.py   -> Aligns the science frames. 
         astrometry_osirisplus.py -> Astrometrization of the science frames.
         Color_Codes.py           -> Gives color to the comments

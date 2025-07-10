@@ -16,8 +16,8 @@ Copyright (C) 2025 Gran Telescopio Canarias <https://www.gtc.iac.es>
 Fabricio Manuel Pérez Toledo <fabricio.perez@gtc.iac.es>
 """
 
-__author__="Fabricio Manuel Pérez Toledo"
-__version__ = "0.2.4"
+__author__="Fabricio M. Pérez-Toledo"
+__version__ = "1.0.0"
 __license__ = "GPL v3.0"
 
 from SAUSERO.check_files import *

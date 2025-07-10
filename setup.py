@@ -20,7 +20,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="sausero",
-    version="0.2.4",
+    version="1.0.0",
     packages=find_packages(where='.'),
     package_data={
         'SAUSERO    ': [
