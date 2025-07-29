@@ -37,7 +37,6 @@ def readJSON():
     else:
         config_path = pkg_resources.resource_filename(
             'SAUSERO', 'config/configuration.json')
-        #return json.load(open("SAUSERO/config/configuration.json"))
         return json.load(open(config_path))
 
 
@@ -74,10 +73,14 @@ def classify_images(tab):
     return existence
 
 
-def check_files(config_path, PRG, OB):
+def check_files(config_path, PRG, OB, abs_path=False):
 
     conf = readJSON()#read_config(config_path)
-    directory = conf['DIRECTORIES']['PATH_DATA'] + f"{PRG}_{OB}/raw/"
+
+    if abs_path:
+        directory = conf['DIRECTORIES']['PATH_DATA']
+    else:
+        directory = conf['DIRECTORIES']['PATH_DATA'] + f"{PRG}_{OB}/raw/"
 
     ic = ccdp.ImageFileCollection(directory, keywords=['OBSMODE','OBJECT','FILTER2','EXPTIME'])
     image_types = classify_images(ic.summary)

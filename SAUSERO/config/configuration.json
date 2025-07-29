@@ -1,6 +1,6 @@
 {
     "DIRECTORIES": {
-        "PATH_DATA": ""
+        "PATH_DATA": "/home/fabricio.perez/Frames/OSIRIS/"
     },
     "REDUCTION": {
         "use_BIAS": true,
@@ -13,7 +13,7 @@
         "save_std": true,
         "save_sky": true,
         "save_not_sky": false,
-        "save_fringing": false
+        "save_fringing": true
     },
     "ALIGNING": {
         "use_aligning": true,
@@ -21,7 +21,7 @@
     },
     "ASTROMETRY": {
         "use_astrometry": true,
-        "No_Session": "",
+        "No_Session": "uavfufvkzrfjsplg",
         "set_scale_estimate": {
             "scale": 0.254,
             "unknown": 10,

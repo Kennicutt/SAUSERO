@@ -27,13 +27,12 @@ import ccdproc as ccdp
 from matplotlib import pyplot as plt
 import numpy as np
 import yaml as py
-import lacosmic
+#import lacosmic
+from lacosmic.core import lacosmic
 import sep
 
 from SAUSERO.Color_Codes import bcolors as bcl
 from loguru import logger
-
-#logger = logging.getLogger("main_logger")
 
 import logging, inspect
 class InterceptHandler(logging.Handler):
@@ -92,7 +91,7 @@ class Reduction:
     subtracting the master bias and dividing by the master flat, resulting in the final reduced frames.
     """
 
-    def __init__(self, gtcprgid, gtcobid, main_path, path_mask = None):
+    def __init__(self, gtcprgid, gtcobid, main_path, path_mask = None, abs_path=False):
         """Object initialization to carry out the reduction.
 
         Args:
@@ -100,27 +99,34 @@ class Reduction:
             gtcobid (str): Observation block code.
             path_mask (str, optional): Path to BPM.
         """
-        logger.info(f'Initializing the reduction for {gtcprgid}_{gtcobid}.')
         
         self.gtcprgid = gtcprgid
         self.gtcobid = gtcobid
         ROOT = main_path
 
         # The path containing the raw images is defined
-        self.PATH = Path(ROOT + str(gtcprgid) + '_' + str(gtcobid) + '/' + 'raw/')
+        if abs_path:
+            self.PATH = Path(ROOT)
+        else:
+            self.PATH = Path(ROOT + str(gtcprgid) + '_' + str(gtcobid) + '/' + 'raw/')
+        
         if os.path.exists(self.PATH):
             logger.info("Path to raw data exists")
         else:
-            logger.critical(f"Path to raw data does NOT exist")
+            logger.critical(f"{bcl.ERROR}Path to raw data does NOT exist{bcl.ENDC}")
             sys.exit()
 
         # The directory that will contain the intermediate and processed images is defined
-        self.PATH_RESULTS = Path(ROOT + str(gtcprgid) + '_' + str(gtcobid) + '/' + 'reduced/')
+        if abs_path:
+            self.PATH_RESULTS = Path(ROOT).parent/'reduced'
+        else:
+            self.PATH_RESULTS = Path(ROOT + str(gtcprgid) + '_' + str(gtcobid) + '/' + 'reduced/')
+
         self.PATH_RESULTS.mkdir(parents=True, exist_ok=True)
         if os.path.exists(self.PATH_RESULTS):
             logger.info("Path to reduced directory has been created")
         else:
-            logger.critical(f"Path to reduced directory has NOT been created")
+            logger.critical(f"{bcl.ERROR}Path to reduced directory has NOT been created{bcl.ENDC}")
             sys.exit()
 
         # Define the path to mask file
@@ -128,7 +134,7 @@ class Reduction:
         if os.path.exists(self.path_mask):
             logger.info("Path to mask file exists")
         else:
-            logger.critical(f"Path to mask file does NOT exist")
+            logger.critical(f"{bcl.ERROR}Path to mask file does NOT exist{bcl.ENDC}")
             sys.exit()
         
         # The information about the frames in that directory is gathered.
@@ -136,7 +142,7 @@ class Reduction:
         if len(self.ic.summary) != 0:
             logger.info("Data collection is ready")
         else:
-            logger.critical(f"NOT files to reduce")
+            logger.critical(f"{bcl.ERROR}NOT files to reduce{bcl.ENDC}")
             sys.exit()
 
         # Define dictionaries
@@ -168,7 +174,6 @@ class Reduction:
         mask = mask.data.astype(bool)
         matrix = np.ones(mask.shape)
         matrix[mask == False] = np.nan
-        logger.info("BPM is ready.")
         return matrix[230:2026,28:2060] # TRIM SECTION
 
 
@@ -311,9 +316,6 @@ class Reduction:
         """
         bpm = CCDData.read(self.path_mask, unit=u.dimensionless_unscaled,
                             hdu=0, format='fits', ignore_missing_simple=True)
-        
-        #bpm = np.ones((2056,2073))
-
         self.MASK = self.configure_mask(bpm)
         logger.info("BPM is ready.")
 
@@ -366,7 +368,7 @@ class Reduction:
         self.masterbias = self.combining(bias) * self.MASK
         self.master_dict['bias'] = self.masterbias
 
-        logger.info("Masterbias has been created.")
+        logger.info(f"{bcl.OKGREEN}Masterbias has been created{bcl.ENDC}")
 
 
 
@@ -375,7 +377,6 @@ class Reduction:
         This method creates the master flat frame for each filter.
         """
         lst_flat = [elem for elem in list(self.DATA_DICT.keys()) if 'flat' in elem]
-        #if not lst_flat == []:
         for filt in lst_flat:
             if 'flat+OPEN' in filt:
                 continue
@@ -384,10 +385,7 @@ class Reduction:
             median = np.nanmedian(combflat)
             masterflat = combflat/median
             self.master_dict[filt] = masterflat
-            logger.info(f"Masterflat has been created for {filt} filter.")
-        #else:
-        #    logger.error("No flat frames found.")
-        #    self.conf['STEPS']['FLAT'] = False
+            logger.info(f"{bcl.OKGREEN}Masterflat has been created for {filt} filter{bcl.ENDC}")
 
 
     def get_std(self, no_CRs=False, contrast_arg = 1.5, cr_threshold_arg = 5.,
@@ -405,18 +403,14 @@ class Reduction:
             
             if apply_flat == False:
                 self.master_dict['flat+' + value] = None
-
-            #args = [elem, self.master_dict['bias'],
-            #        self.master_dict['flat+' + value]]
         
             std = self.clean_target(elem, self.master_dict['bias'],self.master_dict['flat+' + value])
-            #std = self.clean_target(*args)
             lst_sd = []
             for sd in std:
                 if no_CRs:
                     logger.info(f"Removing CRs to photometric calibration frame for {value}.")
                     no_mask = np.nan_to_num(sd, nan=np.nanmedian(sd))
-                    lst_sd.append(lacosmic.lacosmic(no_mask, contrast=contrast_arg,
+                    lst_sd.append(lacosmic(no_mask, contrast=contrast_arg,
                                                     cr_threshold=cr_threshold_arg,
                                                     neighbor_threshold=neighbor_threshold_arg,
                                                     effective_gain=1.9,
@@ -440,18 +434,14 @@ class Reduction:
             
             if (apply_flat == False) or (value == 'OPEN'):
                 self.master_dict['flat+' + value] = None
-            
-            #args = [elem, self.master_dict['bias'],
-            #        self.master_dict['flat+' + value]]
-             
+
             target= self.clean_target(elem, self.master_dict['bias'],self.master_dict['flat+' + value])
-            #target= self.clean_target(*args)
             lst_tg = []
             for tg in target:
                 if no_CRs:
                     logger.info(f"Removing CRs to science frames for {value}.")
                     no_mask = np.nan_to_num(tg, nan=np.nanmedian(tg))
-                    lst_tg.append(lacosmic.lacosmic(no_mask, contrast=contrast_arg,
+                    lst_tg.append(lacosmic(no_mask, contrast=contrast_arg,
                                                     cr_threshold=cr_threshold_arg,
                                                     neighbor_threshold=neighbor_threshold_arg,
                                                     effective_gain=1.9,
@@ -468,7 +458,8 @@ class Reduction:
         This method performs a special cleaning when using Sloan_z to remove the interference pattern.
         """
         lst_results = [elem for elem in list(self.DATA_DICT.keys())]
-        if 'Sloan_z' in lst_results:
+        #print(f'{bcl.HEADER}List of results: {lst_results}{bcl.ENDC}')
+        if 'target+Sloan_z' in lst_results:
             logger.info("Removing the fringe on Sloan z filter.")
             fringe= self.target_dict['target+Sloan_z']
             combfringe = self.combining(fringe)
@@ -476,7 +467,13 @@ class Reduction:
             masterfringe = combfringe/median
             fr_free = [elem/masterfringe for elem in fringe]
             self.target_dict['fringe+Sloan_z'] = fr_free
-            logger.info("Frames with fringe free.")
+            logger.info("Sci frames with free fringe.")
+            fringe_std = self.std_dict['std+Sloan_z']
+            fr_free_std = [elem/masterfringe for elem in fringe_std]
+            self.std_dict['fringe+Sloan_z'] = fr_free_std
+            logger.info("STD frame/s with free fringe.")
+
+
 
         
     
@@ -488,27 +485,30 @@ class Reduction:
         logger.info(f"Substracting sky background.")
         for elem in lst_target_keys:
             key, value = elem.split('+')
-            lst_frames = self.target_dict['target+' + value]
-            #if len(lst_frames) != 0:
+            #lst_frames = self.target_dict['target+' + value]
+            lst_frames = self.target_dict[elem]
             cube = np.dstack(lst_frames)
             cube.sort(axis=2)
             im_avg = np.median(cube[:,:,:], axis=2)
-            logger.info(f"Creating sky background simulated for {value}.")
+            if key == 'target':
+                logger.info(f"Creating sky background simulated for {value}.")
+            elif key == 'fringe':
+                logger.info(f"Creating sky background simulated for {value} without fringe.")
+            else:
+                logger.error("No defined option for key (target or fringe).")
             self.bkg = sep.Background(im_avg)
             no_sky = []
             for fr in lst_frames:
                 no_sky.append(fr-self.bkg)
             self.target_dict['sky+' + value] = no_sky
-            if key == 'STD':
+            if key == 'std': #This is a special case for the STD stars.
                 logger.info(f"List of photometric calibration frames without sky for {value} created.")
             elif key == 'target':
                 logger.info(f"List of science frames without sky for {value} created.")
+            elif key == 'fringe':
+                logger.info(f"List of science frames without sky and without fringe for {value} created.")
             else:
-                logger.error("No defined option for key.")
-            #else:
-            #    print(f"ERROR: Target list for {value} is empty!!!")
-            #    continue
-
+                logger.error("No defined option for key (target or fringe).")
 
 
     def save_target(self, fringing=False, std=False, sky=False, not_sky=False):
@@ -524,10 +524,10 @@ class Reduction:
             be saved contain sky or not. Defaults to False.
         """
         if not std:
-            logger.info("Saving reduced photometric calibration frames.")
+            logger.info("Saving science reduced frames.")
             lst_results = [elem for elem in list(self.DATA_DICT.keys()) if 'target' in elem]
         else:
-            logger.info("Saving science frames reduced.")
+            logger.info("Saving reduced photometric calibration frames.")
             lst_results = [elem for elem in list(self.DATA_DICT.keys()) if 'std' in elem]
 
         if 'std+OPEN' in lst_results:
@@ -541,40 +541,58 @@ class Reduction:
                 sky_status = 'SKY'
                 status='REDUCED'
                 imagetype='SCIENCE'
+                filt = key.split('+')[1]
                 target = self.target_dict['fringe+Sloan_z']
-                logger.info("Science frames without fringe.")
-            elif std:
+                logger.info("Science frames without fringing.")
+            elif std and not fringing:
                 FRINGING = 'YES'
                 sky_status = 'SKY'
                 status='REDUCED'
                 imagetype='STD'
                 filt = key.split('+')[1]
                 target= self.std_dict[key]
-            elif sky:
+                logger.info("Photometric calibration frames.")
+            elif (key == 'std+Sloan_z' and fringing and std):
+                FRINGING = 'NO'
+                sky_status = 'SKY'
+                status='REDUCED'
+                imagetype='STD'
+                filt = key.split('+')[1]
+                target = self.std_dict['fringe+Sloan_z']
+                logger.info("Photometric calibration frames without fringing.")
+            elif sky and not fringing:
                 FRINGING = 'YES'
                 sky_status = 'SKY'
                 status='REDUCED'
                 imagetype='SCIENCE'
                 filt = key.split('+')[1]
                 target= self.target_dict[key]
-                logger.info("Science frames WITH sky.")
-            elif not_sky:
+                logger.info("Science frames WITH sky")
+            elif not_sky and not fringing:
                 FRINGING = 'YES'
                 sky_status = 'NOSKY'
                 status='REDUCED'
                 imagetype='SCIENCE'
                 filt = key.split('+')[1]
                 target= self.target_dict['sky+'+ filt]
-                logger.info("Science frames WITHOUT sky.")
+                logger.info("Science frames WITHOUT sky")
             else:
-                logger.warning("No defined option for saving the frames.")
-                break
+                logger.warning(f"{bcl.WARNING}No defined option for saving the frames (if fringing is true, ignore this message){bcl.ENDC}")
+                #print("")
+                #print(f'{bcl.HEADER}{lst_results}{bcl.ENDC}')
+                #print(f'{bcl.HEADER}Key: {key}{bcl.ENDC}')
+                #print(f'{bcl.HEADER}Fringing: {fringing}{bcl.ENDC}')
+                #print(f'{bcl.HEADER}Sky: {sky}{bcl.ENDC}')
+                #print(f'{bcl.HEADER}Not sky: {not_sky}{bcl.ENDC}')
+                #print(f'{bcl.HEADER}STD: {std}{bcl.ENDC}')
+                continue
 
             for i in range(len(fnames)):
                 t = time.gmtime()
                 time_string = time.strftime("%Y-%m-%dT%H:%M:%S", t)
                 hd = fits.open(fnames[i])[0].header
                 hd_wcs = wcs.WCS(fits.open(fnames[i])[0].header).to_header()
+                hd['FRINGE'] = FRINGING
                 hd['imgtype'] = imagetype
                 hd['STATUS'] = status
                 hd['SSKY'] = sky_status
@@ -586,10 +604,7 @@ class Reduction:
 
                 filename = os.path.basename(fnames[i])
                 raw_name , __ = filename.split('.')
-                #logger.info(f"Storing the frame: reduced_5sig_{adjetive}_{sky_status}_{filename} for {hd['FILTER2']}")
-                #hdul.writeto(str(self.PATH_RESULTS / (f'reduced_5sig_{adjetive}_{sky_status}_' + filename)),
-                #            overwrite=True)
 
-                logger.info(f"Storing the frame: ADP_{raw_name}_{imagetype}_{sky_status} for {hd['FILTER2']}")
-                hdul.writeto(str(self.PATH_RESULTS / (f'ADP_{raw_name}_{imagetype}_{sky_status}.fits')),
+                logger.info(f"{bcl.OKGREEN}Storing the frame: ADP_{raw_name}_{imagetype}_{sky_status}_{filt} for {hd['FILTER2']}{bcl.ENDC}")
+                hdul.writeto(str(self.PATH_RESULTS / (f'ADP_{raw_name}_{imagetype}_{sky_status}_{filt}.fits')),
                             overwrite=True)

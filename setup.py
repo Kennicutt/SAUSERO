@@ -20,7 +20,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="sausero",
-    version="1.0.0",
+    version="1.1.0",
     packages=find_packages(where='.'),
     package_data={
         'SAUSERO    ': [
@@ -58,5 +58,5 @@ setup(
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.9',
+    python_requires='>=3.11',
 )

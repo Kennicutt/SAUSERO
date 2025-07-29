@@ -17,6 +17,7 @@ Fabricio Manuel Pérez Toledo <fabricio.perez@gtc.iac.es>
 """
 
 import yaml, glob, os
+from pathlib import Path
 
 from astropy.nddata import CCDData
 from astropy.wcs import WCS
@@ -59,7 +60,6 @@ def apply_astrometrynet_client(filename, conf):
     logger.info("Loading the settings")
     ss = Settings()
     img = CCDData.read(filename, unit='adu')
-    #ss.scale_units = 'arcsecperpix'
     ss.set_scale_estimate(conf["ASTROMETRY"]["set_scale_estimate"]["scale"],
                         conf["ASTROMETRY"]["set_scale_estimate"]["unknown"], 
                         unit=conf["ASTROMETRY"]["set_scale_estimate"]["scale_units"])
@@ -80,18 +80,29 @@ def apply_astrometrynet_client(filename, conf):
     logger.info("API connection is ready")
     upl = FileUpload(filename, session=s, settings=ss)
     logger.info("Frame has been uploaded")
-    submission = upl.submit()
-    logger.info("Waiting for an answer from API...")
-    submission.until_done()
-    job = submission.jobs[0]
-    job.until_done()
-    if job.success():
-        wcs = job.wcs_file()
-        logger.info("WCS received from API")
-    logger.info(job.info())
-    
-    if wcs != None:
+    try:
+        submission = upl.submit()
+        logger.info(f"{bcl.UNDERLINE}Waiting for an answer from API{bcl.ENDC}")
+        submission.until_done()
+        job = submission.jobs[0]
+        job.until_done()
+        if job.success():
+            wcs = job.wcs_file()
+            logger.info(f"{bcl.UNDERLINE}WCS received from API{bcl.ENDC}")
+        logger.info(job.info())
         return wcs
+    except Exception as e:
+        logger.error(f"{bcl.ERROR}{e}{bcl.ENDC}")
+        logger.error(f"{bcl.ERROR}The WCS has not been received from the API{bcl.ENDC}")
+        return None
+
+    #if wcs is not None:
+    #    #status_wcs = True
+    #    return wcs#, status_wcs
+    #else:
+    #    logger.error(f"{bcl.ERROR}The WCS has not been received from the API{bcl.ENDC}")
+    #    #status_wcs = False
+    #    #return img.wcs, status_wcs
 
 def modify_WCS(best_wcs, PATH_TO_FILE):
     """This method updates the original WCS with the WCS estimated by the Astrometry.net server.
@@ -104,14 +115,19 @@ def modify_WCS(best_wcs, PATH_TO_FILE):
         CCDData: Science frame with its WCS updated.
     """
     frame = CCDData.read(PATH_TO_FILE, unit='adu')
-    best_wcs = WCS(best_wcs)
-    new_frame =  CCDData(data=frame.data, header=frame.header, wcs=best_wcs,
-                         unit='adu')
-    new_frame.write(PATH_TO_FILE, overwrite=True)
-    logger.info(f"The WCS for {os.path.basename(PATH_TO_FILE)} has been updated")
-    return new_frame
+    
+    if best_wcs is None:
+        logger.warning(f"{bcl.WARNING}The original WCS has been kept{bcl.ENDC}")
+        return frame
+    else:
+        best_wcs = WCS(best_wcs)
+        new_frame =  CCDData(data=frame.data, header=frame.header, wcs=best_wcs,
+                            unit='adu')
+        new_frame.write(PATH_TO_FILE, overwrite=True)
+        logger.info(f"{bcl.OKGREEN}The WCS for {os.path.basename(PATH_TO_FILE)} has been updated{bcl.ENDC}")
+        return new_frame
 
-def solving_astrometry(PRG, OB, filt, conf, sky, calib_std = False):
+def solving_astrometry(PRG, OB, filt, conf, sky, calib_std = False, abs_path=False):
     """This method handles the procedure for obtaining the astrometry solution from the server.
 
     Args:
@@ -127,16 +143,31 @@ def solving_astrometry(PRG, OB, filt, conf, sky, calib_std = False):
     root_path = conf["DIRECTORIES"]["PATH_DATA"]
 
     if calib_std:
-        logger.info("Astrometry calibration for STD star")
-        LST_PATH_TO_FILE = glob.glob(root_path + PRG + '_' + OB + '/reduced/' + f'*STD*.fits')
+        logger.info("Astrometry calibration for the STD star")
+        if abs_path:
+            LST_PATH_TO_FILE = glob.glob(str(Path(root_path).parent/'reduced'/f'*STD*.fits'))
+        else:
+            LST_PATH_TO_FILE = glob.glob(str(Path(root_path)/f'{PRG}_{OB}'/'reduced'/f'*STD*.fits'))
+        
+        LST_PATH_TO_FILE = [file for file in LST_PATH_TO_FILE if filt in CCDData.read(file,unit='adu').header['FILTER2']]
     else:
         logger.info("Astrometry calibration for science target")
-        LST_PATH_TO_FILE = [root_path + PRG + '_' + OB + '/reduced/' + f'{PRG}_{OB}_{filt}_stacked_{sky}.fits']
+        if abs_path:
+            LST_PATH_TO_FILE = [str(Path(root_path).parent/'reduced'/f'{PRG}_{OB}_{filt}_stacked_{sky}.fits')]
+        else:
+            LST_PATH_TO_FILE = [str(Path(root_path)/f'{PRG}_{OB}'/'reduced'/f'{PRG}_{OB}_{filt}_stacked_{sky}.fits')]
 
     PATH_TO_FILE = LST_PATH_TO_FILE[0]
-
+    #print(f"{bcl.HEADER}Path to file: {PATH_TO_FILE}{bcl.ENDC}")
     best_wcs = apply_astrometrynet_client(PATH_TO_FILE, conf)
+
+    #if status_wcs:
+    #    new_frame = modify_WCS(best_wcs, PATH_TO_FILE)
+    #    logger.info(f"{bcl.OKGREEN}The new WCS for {os.path.basename(PATH_TO_FILE)} has been added successfully{bcl.ENDC}")
+    #else:
+    #    new_frame = modify_WCS(best_wcs, PATH_TO_FILE)
+    #    logger.warning(f"{bcl.WARNING}The WCS for {os.path.basename(PATH_TO_FILE)} has not been updated{bcl.ENDC}")
 
     new_frame = modify_WCS(best_wcs, PATH_TO_FILE)
 
-    return best_wcs, new_frame #pixels
+    return best_wcs, new_frame

@@ -17,7 +17,7 @@ Fabricio Manuel Pérez Toledo <fabricio.perez@gtc.iac.es>
 """
 
 __author__="Fabricio M. Pérez-Toledo"
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 __license__ = "GPL v3.0"
 
 from SAUSERO.check_files import *
@@ -28,7 +28,7 @@ from SAUSERO.photometry_osirisplus import *
 
 from astropy import units as u
 
-import argparse, time, os, shutil
+import argparse, time, os, shutil, re
 import os, json, warnings
 import pkg_resources
 
@@ -81,7 +81,6 @@ def readJSON():
     else:
         config_path = pkg_resources.resource_filename(
             'SAUSERO', 'config/configuration.json')
-        #return json.load(open("SAUSERO/config/configuration.json"))
         return json.load(open(config_path))
 
     
@@ -121,9 +120,9 @@ def Results(PATH, ZP, eZP, MASK, filt, ext_info = extinction_dict, conf = None):
             frame.data = (frame.data / hd['EXPTIME'])
             frame.write(PATH / f"{hd['GTCPRGID']}_{hd['GTCOBID']}_{filt}_pho_{sky}.fits",
                         overwrite=True)
-            logger.info(f"Frame generated: {hd['GTCPRGID']}_{hd['GTCOBID']}_pho_{sky}.fits")
+            logger.info(f"{bcl.OKGREEN}Frame generated: {hd['GTCPRGID']}_{hd['GTCOBID']}_{filt}_pho_{sky}.fits{bcl.ENDC}")
         else:
-            logger.warning(f'{bcl.WARNING}¡¡¡¡¡¡¡ The photometry is not going to be executed for NOSKY!!!!!!!{bcl.ENDC}')
+            logger.warning(f'{bcl.WARNING}The photometry is not going to be executed for NOSKY{bcl.ENDC}')
     
 
 def run():
@@ -142,6 +141,9 @@ def run():
 
     parser.add_argument('-bl','--block', help='Select the block of the program.',
                          required=True, type=str)
+    
+    parser.add_argument('-a', '--abs_path', help='Absolute path to the data directory.',
+                         action='store_true')
 
     args = parser.parse_args()
 
@@ -178,115 +180,135 @@ you need to fill in the correct variable.")
     OB = args.block
 
     ########## Checking files (2025-01-22) ##########
-    check_files(pkg_resources.resource_filename('SAUSERO', 'config/configuration.json'), PRG, OB)
+    check_files(pkg_resources.resource_filename('SAUSERO', 'config/configuration.json'), PRG, OB, abs_path=args.abs_path)
 
     hora_local = time.localtime()
     conf = readJSON()
 
-    logger.add(f"{conf['DIRECTORIES']['PATH_DATA']}{PRG}_{OB}/sausero_{time.strftime('%Y-%m-%d_%H:%M:%S', hora_local)}.log", format="{time} {level} {message} ({module}:{line})", level="INFO",
+    if args.abs_path:
+        logger.add(f"{str(Path(conf['DIRECTORIES']['PATH_DATA']).parent)}/sausero_{time.strftime('%Y-%m-%d_%H:%M:%S', hora_local)}.log", format="{time} {level} {message} ({module}:{line})", level="INFO",
                filter=lambda record: 'astropy' not in record["name"])
+    else:
+        logger.add(f"{conf['DIRECTORIES']['PATH_DATA']}{PRG}_{OB}/sausero_{time.strftime('%Y-%m-%d_%H:%M:%S', hora_local)}.log", format="{time} {level} {message} ({module}:{line})", level="INFO",
+                   filter=lambda record: 'astropy' not in record["name"])
+        
+    logger.info(f'{bcl.OKGREEN}Log file created{bcl.ENDC}')
+    logger.info(f'{bcl.OKGREEN}Configuration has been updated successfully{bcl.ENDC}')
+    logger.info(f'{bcl.OKGREEN}Read the configuration file successfully{bcl.ENDC}')
     
     #Reduction Recipe. This recipe is responsible for cleaning the images by subtracting 
     #the masterbias and dividing by the normalized masterflat.
     #Subsequently, the cleaned images are saved.
-    logger.info(f'{bcl.HEADER}---------- Starting the reduction ----------{bcl.ENDC}')
-    logger.info("Configuration updated successfully.")
+    logger.info(f'{bcl.OKBLUE}---------- Starting the reduction for {PRG}-{OB} ----------{bcl.ENDC}')
+    
     bpm_path = pkg_resources.resource_filename('SAUSERO', 'BPM/BPM_OSIRIS_PLUS.fits')
     o = Reduction(PRG, OB, main_path=conf['DIRECTORIES']['PATH_DATA'],
-                path_mask=bpm_path)
+                path_mask=bpm_path, abs_path=args.abs_path)
     o.get_imagetypes()
     o.load_BPM()
     o.sort_down_drawer()
 
     if conf['REDUCTION']['use_BIAS']:
         o.do_masterbias()
+
     else:
-        logger.warning(f'{bcl.WARNING}¡¡¡¡¡¡¡ The masterbias is not going to be created !!!!!!!{bcl.ENDC}')
+        logger.warning(f'{bcl.WARNING}The masterbias is not going to be created{bcl.ENDC}')
 
     if conf['REDUCTION']['use_FLAT']:
         o.do_masterflat()
+
     else:
-        logger.warning(f'{bcl.WARNING}¡¡¡¡¡¡¡ The masterflat is not going to be created !!!!!!!{bcl.ENDC}')
+        logger.warning(f'{bcl.WARNING}The masterflat is not going to be created{bcl.ENDC}')
     
     if conf['REDUCTION']['use_STD']:
         o.get_std(no_CRs=conf['REDUCTION']['no_CRs'], contrast_arg = conf['REDUCTION']['contrast'],
             cr_threshold_arg = conf['REDUCTION']['cr_threshold'],
             neighbor_threshold_arg = conf['REDUCTION']['neighbor_threshold'], apply_flat=conf['REDUCTION']['use_FLAT'])
+
     else:
-        logger.warning(f'{bcl.WARNING}¡¡¡¡¡¡¡ The STD star is not going to be reduced !!!!!!!{bcl.ENDC}')
+        logger.warning(f'{bcl.WARNING}The STD star is not going to be reduced{bcl.ENDC}')
     
     o.get_target(no_CRs=conf['REDUCTION']['no_CRs'], contrast_arg = conf['REDUCTION']['contrast'],
             cr_threshold_arg = conf['REDUCTION']['cr_threshold'],
             neighbor_threshold_arg = conf['REDUCTION']['neighbor_threshold'], apply_flat=conf['REDUCTION']['use_FLAT'])
     
+    
     if conf['REDUCTION']['save_fringing']:
         o.remove_fringing()
+        logger.info(f'{bcl.OKGREEN}Fringing correction applied successfully{bcl.ENDC}')
     else:
-        logger.warning(f'{bcl.WARNING}¡¡¡¡¡¡¡ The fringing correction is not going to be executed !!!!!!!{bcl.ENDC}')
+        logger.warning(f'{bcl.WARNING}The fringing correction is not going to be executed{bcl.ENDC}')
 
     if conf['REDUCTION']['save_not_sky']:    
         o.sustract_sky()
+        logger.info(f'{bcl.OKGREEN}The sky subtraction has been applied successfully{bcl.ENDC}')
     else:
-        logger.warning(f'{bcl.WARNING}¡¡¡¡¡¡¡ The sky substraction is not going to be executed !!!!!!!{bcl.ENDC}')
+        logger.warning(f'{bcl.WARNING}The sky substraction is not going to be executed{bcl.ENDC}')
     
     o.save_target(std=conf['REDUCTION']['save_std'])
+    o.save_target(std=conf['REDUCTION']['save_std'], fringing=conf['REDUCTION']['save_fringing'])
     o.save_target(sky=conf['REDUCTION']['save_sky'])
     o.save_target(fringing=conf['REDUCTION']['save_fringing'])    
     o.save_target(not_sky=conf['REDUCTION']['save_not_sky'])
-    logger.info(f'{bcl.HEADER}¡¡¡¡¡¡¡ Finished the reduction successfully !!!!!!!{bcl.ENDC}')
+    logger.info(f'{bcl.OKBLUE}-------------- End of the reduction successfully --------------{bcl.ENDC}')
     print(2*"\n")
-    
+
+#-----------------------------------------------------------------------------------------------------------------------------------    
     #Aligned Recipe. The cleaned science images are aligned based on the filter used in each case. 
     #Then, they are saved as aligned images.
     if conf['ALIGNING']['use_aligning']:
-        logger.info(f"{bcl.HEADER}---------- Starting the alignment ----------{bcl.ENDC}")
-        al = OsirisAlign(PRG, OB, conf)
+        logger.info(f"{bcl.OKBLUE}---------- Starting the alignment ----------{bcl.ENDC}")
+        al = OsirisAlign(PRG, OB, conf, abs_path=args.abs_path)
         for filt in list(set(al.ic.summary['filtro'])):
             for sky in ['SKY', 'NOSKY']:
-                logger.info(f'{bcl.WARNING}++++++++++ Aligment for {filt} & {sky} ++++++++++{bcl.ENDC}')
                 if conf['REDUCTION']['save_not_sky'] or sky == 'SKY':
+                    logger.info(f'{bcl.OKCYAN}++++++++++ Aligment for {filt} & {sky} ++++++++++{bcl.ENDC}')
                     align = al.aligning(filt, sky=sky)
                     lst = al.load_frames(filt, sky=sky)
                     fr = CCDData.read(lst[0], unit='adu')
                     header = fr.header
                     header['STACKED'] = (True, 'Stacked image')
-                    header['exptime'] = al.total_exptime * (al.num + 1.)
+                    header['exptime'] = al.total_exptime * al.num #(al.num + 1.)
                     logger.info(f"Estimated total exposure time: {header['exptime']} sec")
                     wcs = fr.wcs
                     logger.info(f"Updating the WCS information")
                     save_fits(align, header, wcs, al.PATH_REDUCED / f'{PRG}_{OB}_{filt}_stacked_{sky}.fits')
-                    print(f'{bcl.HEADER}¡¡¡¡¡¡¡ Alineado para {filt} & {sky} realizado exitosamente !!!!!!!{bcl.ENDC}')
+                    
                 else:
-                    logger.warning(f'{bcl.WARNING}: Alignment is not going to be executed for NOSKY{bcl.ENDC}')
+                    logger.warning(f'{bcl.WARNING}Alignment is not going to be executed for NOSKY{bcl.ENDC}')
 
-        print(f'{bcl.HEADER}¡¡¡¡¡¡¡ El alineado para cada filtro finalizado !!!!!!!{bcl.ENDC}')
+        logger.info(f'{bcl.OKBLUE}------------------- End of the alignment -------------------{bcl.ENDC}')
         print(2*"\n")
     else:
-        logger.warning(f'{bcl.WARNING}¡¡¡¡¡¡¡ The alignment is not going to be executed !!!!!!!{bcl.ENDC}')
+        logger.warning(f'{bcl.WARNING}The alignment is not going to be executed{bcl.ENDC}')
 
+#-----------------------------------------------------------------------------------------------------------------------------------
      #Astrometry Recipe. The aligned image for each filter undergoes an astrometric process to 
      #accurately determine the real positions of the celestial bodies present in the scene.
     if conf['ASTROMETRY']['use_astrometry']:
-        logger.info(f"{bcl.HEADER}---------- Start the astrometrization ----------{bcl.ENDC}")
+        logger.info(f"{bcl.OKBLUE}---------- Start the astrometrization ----------{bcl.ENDC}")
         del filt
         ic_ast = ccdp.ImageFileCollection(al.PATH_REDUCED, keywords='*', glob_include='*stacked*', glob_exclude='*NOSKY*')
         lst_filt = list(ic_ast.summary['filtro'])
         for filt in lst_filt:
-            logger.info(f'{bcl.WARNING}++++++++++ Astrometrization for {filt} ++++++++++{bcl.ENDC}')
+            logger.info(f'{bcl.OKCYAN}++++++++++ Astrometrization for the stacked image with {filt} filter ++++++++++{bcl.ENDC}')
             try:
-                best_wcs, new_frame = solving_astrometry(PRG, OB, filt, conf, sky='SKY', calib_std=False)
+                best_wcs, new_frame = solving_astrometry(PRG, OB, filt, conf, sky='SKY', calib_std=False, abs_path=args.abs_path)
+                logger.info(f'{bcl.OKGREEN}New WCS for the stacked image with {filt} filter.{bcl.ENDC}')
             except:
-                logger.warning(f'{bcl.WARNING}¡¡¡¡¡¡¡ Astrometrization failed for {filt} !!!!!!!{bcl.ENDC}')
+                new_frame = CCDData.read(al.PATH_REDUCED / f'{PRG}_{OB}_{filt}_stacked_SKY.fits', unit='adu')
                 best_wcs = None
+                logger.error(f'{bcl.ERROR}Failed astrometrization for the stacked image with {filt} filter{bcl.ENDC}')
             for sky in ['SKY', 'NOSKY']:
                 if sky == 'SKY':
                     if best_wcs is not None:
                         new_frame.header['ASTROMETRY'] = (True, 'Astrometrized image')
                         new_frame.write(al.PATH_REDUCED / f'{PRG}_{OB}_{filt}_ast_SKY.fits', overwrite=True)
+                        logger.info(f'{bcl.OKGREEN}Successful astrometrization for the stacked image with {filt} and SKY{bcl.ENDC}')
                     else:
                         new_frame.header['ASTROMETRY'] = (False, 'Astrometrized image')
                         new_frame.write(al.PATH_REDUCED / f'{PRG}_{OB}_{filt}_ast_SKY.fits', overwrite=True)
-                        logger.warning(f'{bcl.ERROR}¡¡¡¡¡¡¡ Astrometrization failed for {filt} !!!!!!!{bcl.ENDC}')
+                        logger.warning(f'{bcl.WARNING}Failed astrometrization for the stacked image with {filt} and SKY. Conservation of original WCS{bcl.ENDC}')
                 else:
                     if conf['REDUCTION']['save_not_sky']:
                         nosky = CCDData.read(al.PATH_REDUCED / f'{PRG}_{OB}_{filt}_stacked_NOSKY.fits', unit='adu')
@@ -294,75 +316,107 @@ you need to fill in the correct variable.")
                             nosky.wcs = WCS(best_wcs)
                             nosky.header['ASTROMETRY'] = (True, 'Astrometrized image')
                             nosky.write(al.PATH_REDUCED / f'{PRG}_{OB}_{filt}_ast_NOSKY.fits', overwrite=True)
+                            logger.info(f'{bcl.OKGREEN}Successful astrometrization for the stacked image with {filt} and NOSKY{bcl.ENDC}')
                         else:
                             nosky.wcs = nosky.wcs
                             nosky.header['ASTROMETRY'] = (False, 'Astrometrized image')
                             nosky.write(al.PATH_REDUCED / f'{PRG}_{OB}_{filt}_ast_NOSKY.fits', overwrite=True)
-                            logger.warning(f'{bcl.ERROR}¡¡¡¡¡¡¡ Astrometrization failed for {filt} !!!!!!!{bcl.ENDC}')
+                            logger.warning(f'{bcl.WARNING}Failed astrometrization for the stacked image with {filt} and NOSKY. Conservation of original WCS{bcl.ENDC}')
                     else:
-                        logger.warning(f'{bcl.WARNING}¡¡¡¡¡¡¡ The astrometry is not going to be executed for NOSKY !!!!!!!{bcl.ENDC}')
+                        logger.warning(f'{bcl.WARNING}The astrometry is not going to be executed for NOSKY{bcl.ENDC}')
 
-                print(f'{bcl.HEADER}¡¡¡¡¡¡¡ Astrometrization done successfully for {filt} !!!!!!!{bcl.ENDC}')
+                logger.info(f'{bcl.OKCYAN}END of the astrometrization for {filt} and {sky}{bcl.ENDC}')
                 time.sleep(10)
     else:
-        logger.warning(f'{bcl.WARNING}¡¡¡¡¡¡¡ The astrometry is not going to be executed !!!!!!!{bcl.ENDC}')
+        logger.warning(f'{bcl.WARNING}The astrometry is not going to be executed{bcl.ENDC}')
 
     if conf['REDUCTION']['use_STD'] and conf['ASTROMETRY']['use_astrometry']:
-        logger.info(f'{bcl.HEADER}---------- Start astrometrization for STD star ----------{bcl.ENDC}')
+        logger.info(f'{bcl.OKCYAN}---------- Start astrometrization for STD star ----------{bcl.ENDC}')
         time.sleep(30)
         ic_std = ccdp.ImageFileCollection(al.PATH_REDUCED, keywords='*', glob_include='*STD*', glob_exclude='*NOSKY*')
         lst_object = list(set(ic_std.summary['object']))
         try:
-            best_wcs_std, new_frame_std = solving_astrometry(PRG, OB, filt, conf, sky='SKY', calib_std=True)
+            best_wcs_std, new_frame_std = solving_astrometry(PRG, OB, filt, conf, sky='SKY', calib_std=True, abs_path=args.abs_path)
+            logger.info(f'{bcl.OKGREEN}New WCS for the STD star with {filt} filter.{bcl.ENDC}')
         except:
-            logger.warning(f'{bcl.WARNING}¡¡¡¡¡¡¡ Astrometrization failed for STD star !!!!!!!{bcl.ENDC}')
             best_wcs_std = None
+            logger.error(f'{bcl.ERROR}Failed astrometrization for the STD star with {filt} filter{bcl.ENDC}')
+
         for path_to_std in ic_std.files_filtered(include_path=True):
-            logger.info(f'{bcl.WARNING}++++++++++ Astrometrization for: {path_to_std} ++++++++++{bcl.ENDC}')
             std_img = CCDData.read(path_to_std, unit='adu')
             if best_wcs_std is not None:
                 std_img.wcs = WCS(best_wcs_std)
                 std_img.header['ASTROMETRY'] = (True, 'Astrometrized image')
                 std_img.write(path_to_std, overwrite=True)
-                logger.info(f'{bcl.HEADER}¡¡¡¡¡¡¡ Astrometrization done successfully for STD star !!!!!!!{bcl.ENDC}')
+                logger.info(f'{bcl.OKGREEN}Successful astrometrization done for the {std_img.header["OBJECT"]} with {std_img.header["FILTER2"]}{bcl.ENDC}')
             else:
                 std_img.wcs = std_img.wcs
                 std_img.header['ASTROMETRY'] = (False, 'Astrometrized image')
                 std_img.write(path_to_std, overwrite=True)
-                logger.warning(f'{bcl.ERROR}¡¡¡¡¡¡¡ Astrometrization failed for STD star !!!!!!!{bcl.ENDC}')
+                logger.warning(f'{bcl.WARNING}Failed astrometrization for the {std_img.header["OBJECT"]} with {std_img.header["FILTER2"]}. Conserve the original WCS{bcl.ENDC}')
 
 
-
-        print(f'{bcl.HEADER}¡¡¡¡¡¡¡ Astrometrization finished !!!!!!!{bcl.ENDC}')
+        logger.info(f'{bcl.OKCYAN}END of astrometrization for STD{bcl.ENDC}')
         print(2*"\n")
     else:
-        logger.warning(f'{bcl.WARNING}¡¡¡¡¡¡¡ The astrometry for STD is not going to be executed !!!!!!!{bcl.ENDC}')
+        logger.warning(f'{bcl.WARNING}The astrometry for STDs are not going to be executed{bcl.ENDC}')
 
+    logger.info(f'{bcl.OKBLUE}------------------- End of the astrometrization -------------------{bcl.ENDC}')
+    print(2*"\n")
 
+#-----------------------------------------------------------------------------------------------------------------------------------
     #Photometry Recipe. The instrumental magnitude is estimated from the calibration star. This allows us 
     # to later estimate the apparent magnitude of the celestial bodies present in the science image. 
     # This process is done for each filter used. Additionally, the Results() function allows including 
     # this information in the header of the cleaned, aligned, and astrometrically processed science image.
     if conf['PHOTOMETRY']['use_photometry']:
-        logger.info(f"{bcl.HEADER}---------- Starting the estimation of ZeroPoint ----------{bcl.ENDC}")
+        logger.info(f"{bcl.OKBLUE}---------- Starting the estimation of ZeroPoint ----------{bcl.ENDC}")
         del filt
         ic_pho = ccdp.ImageFileCollection(al.PATH_REDUCED, keywords='*', glob_include='*ADP*')
         lst_filt = list(set(ic_pho.summary['filtro']))
         for filt in lst_filt:
             if filt == "OPEN":
+                logger.warning(f'{bcl.WARNING}The OPEN filter is not going to be used for photometry{bcl.ENDC}')
                 continue
-            logger.info(f'{bcl.WARNING}++++++++++ Filter selected is {filt} ++++++++++{bcl.ENDC}')
+            logger.info(f'{bcl.OKCYAN}++++++++++ Filter selected is {filt} ++++++++++{bcl.ENDC}')
             try:
-                ZP, eZP = photometry(PRG, OB, ic_pho.files_filtered(imgtype='STD',filter2=filt)[0], conf)
+                ZP, eZP = photometry(PRG, OB, ic_pho.files_filtered(imgtype='STD',filter2=filt)[0], conf, abs_path=args.abs_path)
                 Results(al.PATH_REDUCED, ZP, eZP, o.MASK, filt, conf=conf)
+                logger.info(f'{bcl.OKGREEN}Photometry done for {filt} filter{bcl.ENDC}')
             except:
-                logger.warning(f'{bcl.WARNING}¡¡¡¡¡¡¡ Photometry failed for {filt} !!!!!!!{bcl.ENDC}')
                 ZP, eZP = None, None
                 Results(al.PATH_REDUCED, ZP, eZP, o.MASK, filt, conf=conf)
-
-        logger.info(f'{bcl.HEADER}¡¡¡¡¡¡¡ End of the reduction. The results are available in reduced directory. !!!!!!!{bcl.ENDC}')
+                logger.warning(f'{bcl.WARNING}Failed photometry for {filt} filter{bcl.ENDC}')
+    
     else:
-        logger.warning(f'{bcl.WARNING}¡¡¡¡¡¡¡ The photometry is not going to be executed !!!!!!!{bcl.ENDC}')
+        logger.warning(f'{bcl.WARNING}The photometry is not going to be executed{bcl.ENDC}')
 
+    logger.info(f'{bcl.OKBLUE}------------------- End of the photometry -------------------{bcl.ENDC}')
+    print(2*"\n")
+    # Final message
+    if args.abs_path:
+        logger.info(f'{bcl.OKBLUE}End of the reduction. The results are available in {al.PATH_REDUCED.parent/"reduced"}{bcl.ENDC}')
+    else:
+        logger.info(f'{bcl.OKBLUE}End of the reduction. The results are available in {conf["DIRECTORIES"]["PATH_DATA"]+f"{PRG}_{OB}/reduced/"}{bcl.ENDC}')
+    
+    for archivo in glob.glob(str(al.PATH_REDUCED/"ADP*.fits")):
+        nuevo_nombre = re.sub(r"_(Sloan)_[a-zA-Z]+", "", archivo)
+        os.rename(archivo, nuevo_nombre)
+
+    try:
+        for archivo in glob.glob(str(al.PATH_REDUCED/"ADP*OPEN*.fits")):
+            nuevo_nombre = re.sub(r"_(OPEN)_+", "", archivo)
+            os.rename(archivo, nuevo_nombre)
+    except:
+        logger.info(f'No OPEN filter')
+
+    print(2*"\n")
+    print(f"{bcl.OKBLUE}************************* THANK YOU FOR USING SAUSERO *************************{bcl.ENDC}")
+    print(2*"\n")
+    print(f"{bcl.OKBLUE}***********************************************************************{bcl.ENDC}")
+    print(f"{bcl.OKBLUE}************************* END OF SAUSERO **************************{bcl.ENDC}")
+    print(f"{bcl.OKBLUE}***********************************************************************{bcl.ENDC}")
+
+#--------------------------------------------------------------------
 if __name__ == '__main__':
     run()

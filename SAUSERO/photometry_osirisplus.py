@@ -20,6 +20,7 @@ from astropy.nddata import CCDData
 import numpy as np
 import matplotlib.pyplot as plt
 import sep, json, os
+from pathlib import Path
 from astroquery.simbad import Simbad
 import astropy.units as u
 from astropy.coordinates import SkyCoord
@@ -51,7 +52,6 @@ def readJSON_STD():
     else:
         std_path = pkg_resources.resource_filename(
             'SAUSERO', 'config/photometric_standards.json')
-        #return json.load(open("SAUSERO/config/photometric_standards.json"))
         return json.load(open(std_path))
     
 
@@ -76,7 +76,7 @@ def get_ugriz(values):
 
 bands_dict = readJSON_STD()
 
-def photometry(programa, bloque, filename, conf, extinction_dict=extinction_dict, bands_dict=bands_dict):
+def photometry(programa, bloque, filename, conf, extinction_dict=extinction_dict, bands_dict=bands_dict, abs_path=False):
     """This method estimates the instrumental magnitude (zeropoint) for the night, depending on the filter used.
 
     Args:
@@ -88,16 +88,18 @@ def photometry(programa, bloque, filename, conf, extinction_dict=extinction_dict
         float: Estimation of the instrumental magnitude and its error.
     """
     
-    path = conf["DIRECTORIES"]["PATH_DATA"] + f"{programa}_{bloque}/reduced/"
+    if abs_path:
+        path = Path(conf["DIRECTORIES"]["PATH_DATA"]).parent/'reduced'
+    else:
+        path = Path(conf["DIRECTORIES"]["PATH_DATA"])/f'{programa}_{bloque}'/'reduced'
 
-    frame = CCDData.read(path + filename, unit='adu')
+    frame = CCDData.read(path/filename, unit='adu')
     logger.info("STD frame has been loaded successfully")
 
     hd = frame.header
     W = frame.wcs
 
     filtro = hd['FILTER2']
-    #ind = index_dict[filtro]
     t = hd['EXPTIME']
     target_name = hd['OBJECT'].split('_')[1]
     
@@ -116,15 +118,14 @@ def photometry(programa, bloque, filename, conf, extinction_dict=extinction_dict
                             stretch=LogStretch(a=1))
     plt.plot(x, y, 'xr')
     fig.colorbar(im)
-    fig.savefig(path +f'STD_IN_FIELD-{filtro}.png')
+    fig.savefig(path / f'STD_IN_FIELD-{filtro}.png')
     logger.info("STD's FoV has been saved as a PNG file")
 
     # Extract Sources
-
-    frame_data = frame.data.byteswap().newbyteorder()
+    frame_data = frame.data.astype(frame.data.dtype.newbyteorder('='))
 
     bkg = sep.Background(frame_data)
-    logger.info(f"Background estimated: {bkg.globalback} +- {bkg.globalrms}")
+    logger.info(f"Background estimated: {bkg.globalback:.3f} +- {bkg.globalrms:.3f}")
 
     kernel = np.array([[1., 2., 3., 2., 1.],
                    [2., 3., 5., 3., 2.],
@@ -157,7 +158,7 @@ def photometry(programa, bloque, filename, conf, extinction_dict=extinction_dict
         e.set_edgecolor('red')
         ax.add_artist(e)
 
-    fig.savefig(path +f'SOURCES_DETECTED-{filtro}.png')
+    fig.savefig(path / f'SOURCES_DETECTED-{filtro}.png')
     logger.info("STD's FoV has been saved adding the objects")
 
     distance = np.sqrt((objects['x'] - x)**2 + (objects['y']-y)**2)
@@ -176,17 +177,17 @@ def photometry(programa, bloque, filename, conf, extinction_dict=extinction_dict
     logger.info(f"STD name: {hd['OBJECT']}")
     logger.info(f"RA: {ra}, Dec: {dec}")
     logger.info(f"Exposure time: {t} sec")
-    logger.info(f"Position: {X[0]}, {Y[0]}")
-    logger.info(f"Ellipse info -> a: {a[0]}, b: {b[0]} & theta: {theta[0]}")
-    logger.info(f"Flux: {flux[0]} counts")
+    logger.info(f"Position: {X[0]:.3f}, {Y[0]:.3f}")
+    logger.info(f"Ellipse info -> a: {a[0]:.3f}, b: {b[0]:.3f} & theta: {theta[0]:.3f}")
+    logger.info(f"Flux: {flux[0]:.3f} counts")
 
     kronrad, krflag = sep.kron_radius(clean_data, X, Y, a, b, theta, 6.0)
     flux, fluxerr, flag = sep.sum_ellipse(clean_data, X, Y, a, b, theta, 2.5*kronrad,
                                         subpix=1)
     flag |= krflag  # combine flags into 'flag'
 
-    logger.info(f"Kron Radius: {kronrad[0]} pxs")
-    logger.info(f"AUTO FLUX: {flux[0]} counts")
+    logger.info(f"Kron Radius: {kronrad[0]:.3f} pxs")
+    logger.info(f"AUTO FLUX: {flux[0]:.3f} counts")
     logger.info(f"AUTO ERROR FLUX: {fluxerr[0]} counts")
     logger.info(f"AUTO FLAG: {flag[0]}")
 
@@ -200,6 +201,6 @@ def photometry(programa, bloque, filename, conf, extinction_dict=extinction_dict
     dZP = dm + dflux * (t/flux[0]) * np.log10(np.e) + (extinction_dict[filtro][1] * hd['AIRMASS'])
 
     #print(f"ZP value: {ZP} +- {dZP}")
-    logger.info(f'Estimated ZP: {ZP} +- {dZP} for {filtro}')
+    logger.info(f'Estimated ZP: {ZP:.3f} +- {dZP:.3f} for {filtro}')
 
     return ZP, dZP

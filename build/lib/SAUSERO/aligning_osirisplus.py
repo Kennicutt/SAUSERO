@@ -21,7 +21,7 @@ from astropy.nddata import CCDData
 from astropy.table import Table
 import ccdproc as ccdp
 from pathlib import Path
-import time
+import time, os
 import matplotlib.pyplot as plt
 from astropy.visualization import LogStretch,imshow_norm, ZScaleInterval
 
@@ -35,7 +35,7 @@ class OsirisAlign:
     faint sources.
     """
     
-    def __init__(self, program, block, conf):
+    def __init__(self, program, block, conf, abs_path=False):
         """We initialize the class by defining important parameters.
 
         Args:
@@ -47,8 +47,12 @@ class OsirisAlign:
         self.program = program
         self.block = block
         self.reduced_data_directory = "reduced"
-        self.PATH_REDUCED = Path(self.PATH + self.program + "_" + self.block + "/" + "reduced/")
-        #self.PATH_TARGET = Path(self.PATH + self.program + "_" + self.block + "/" + "object/")
+
+        if abs_path:
+            self.PATH_REDUCED = Path(self.PATH).parent/'reduced'
+        else:
+            self.PATH_REDUCED = Path(self.PATH + self.program + "_" + self.block + "/" + "reduced/")
+        
         self.ic = ccdp.ImageFileCollection(self.PATH_REDUCED, keywords='*', glob_include='ADP*')
 
 
@@ -103,32 +107,36 @@ class OsirisAlign:
         """
         logger.info(f"Creating cube with frames for {filt}")
         cube = self.get_each_data(filt, sky=sky)
-        REF = cube[0]
+        REF = cube[0].astype('float32')
 
-        self.num=0
+        self.num=1
         logger.info(f"Number of frames in cube is: {len(cube)}")
         for IMG in cube[1:]:
             try:
-                t, __ = aa.find_transform(IMG, REF, 
-                                          max_control_points=self.conf["ALIGNING"]["max_control_points"]) #default: 30
-                time.sleep(1)
-                REF = REF.byteswap().newbyteorder()
-                IMG = IMG.byteswap().newbyteorder()
-                align, footprint = aa.apply_transform(t, IMG, REF)
+                #-------------------------------------------------------------------------------
+                #Change the following line to use astroalign's register method in v1.1.0 (2025-07-25)
+                #
+                #t, __ = aa.find_transform(IMG.astype('float32'), REF, 
+                #                          max_control_points=self.conf["ALIGNING"]["max_control_points"]) #default: 30
+                #time.sleep(1)
+                ##REF = REF.view(REF.dtype.newbyteorder('<')) # Convert to little-endian
+                ##IMG = IMG.view(IMG.dtype.newbyteorder('<')) # Convert to little-endian
+                ##IMG = IMG.byteswap().newbyteorder()
+                #align, footprint = aa.apply_transform(t, IMG, REF)
+                #------------------------------------------------------------------------------
+                align, footprint = aa.register(IMG.astype('float32'), REF,
+                                               max_control_points=self.conf["ALIGNING"]["max_control_points"]) #default: 30
                 REF = REF + align
                 self.num += 1
                 logger.info(f"Image NO: {self.num}/{len(cube)}")
-            except aa.MaxIterError:
-                #print(aa.MaxIterError)
-                logger.error(f"{bcl.FAIL}ERROR{bcl.ENDC}: {aa.MaxIterError}")
+            except aa.MaxIterError as e:
+                logger.error(f"{bcl.FAIL}ERROR{bcl.ENDC}: {type(e).__name__}; {str(e)}")
                 pass
-            except ValueError:
-                #print(ValueError)
-                logger.error(f"{bcl.FAIL}ERROR{bcl.ENDC}: {ValueError}")
+            except ValueError as e:
+                logger.error(f"{bcl.FAIL}ERROR{bcl.ENDC}: {type(e).__name__}; {str(e)}")
                 pass
-            except TypeError:
-                #print(TypeError)
-                logger.error(f"{bcl.FAIL}ERROR{bcl.ENDC}: {TypeError}")
+            except TypeError as e:
+                logger.error(f"{bcl.FAIL}ERROR{bcl.ENDC}: {type(e).__name__}; {str(e)}")
                 pass
 
         return REF
@@ -161,4 +169,4 @@ def save_fits(image, header, wcs, fname, allow_nosky=True):
     header['STACKED'] = 'YES'
     ccd = CCDData(data=image, header=header, wcs=wcs, unit='adu')
     ccd.write(fname, overwrite=True)
-    logger.info(f"New image has been created: {fname}")
+    logger.info(f"{bcl.OKGREEN}New image has been created: {os.path.basename(fname)}{bcl.ENDC}")
