@@ -113,10 +113,10 @@ To obtain this key, create an account on [Astrometry.net](https://nova.astrometr
 The directory structure must follow the format `<Your_Program>_<Your_OB>/`. Inside this directory, you should have 
 a `raw/` folder where the original frames are stored, and a `reduced/` folder where the reduced frames will be saved.
 
- Your_program/
-         - configuration.json
-         - raw/
-         - reduced/
+    Your_program/
+        configuration.json
+        raw/
+        reduced/
 
 
 ## Running SAUSERO
