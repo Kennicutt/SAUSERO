@@ -27,7 +27,6 @@ import ccdproc as ccdp
 from matplotlib import pyplot as plt
 import numpy as np
 import yaml as py
-#import lacosmic
 from lacosmic.core import lacosmic
 import sep
 
@@ -91,7 +90,7 @@ class Reduction:
     subtracting the master bias and dividing by the master flat, resulting in the final reduced frames.
     """
 
-    def __init__(self, gtcprgid, gtcobid, main_path, path_mask = None, abs_path=False):
+    def __init__(self, main_path, path_mask = None):
         """Object initialization to carry out the reduction.
 
         Args:
@@ -99,16 +98,8 @@ class Reduction:
             gtcobid (str): Observation block code.
             path_mask (str, optional): Path to BPM.
         """
-        
-        self.gtcprgid = gtcprgid
-        self.gtcobid = gtcobid
-        ROOT = main_path
 
-        # The path containing the raw images is defined
-        if abs_path:
-            self.PATH = Path(ROOT)
-        else:
-            self.PATH = Path(ROOT + str(gtcprgid) + '_' + str(gtcobid) + '/' + 'raw/')
+        self.PATH = Path(main_path)
         
         if os.path.exists(self.PATH):
             logger.info("Path to raw data exists")
@@ -117,17 +108,15 @@ class Reduction:
             sys.exit()
 
         # The directory that will contain the intermediate and processed images is defined
-        if abs_path:
-            self.PATH_RESULTS = Path(ROOT).parent/'reduced'
-        else:
-            self.PATH_RESULTS = Path(ROOT + str(gtcprgid) + '_' + str(gtcobid) + '/' + 'reduced/')
+        self.PATH_RESULTS = self.PATH.parent/'reduced'
 
-        self.PATH_RESULTS.mkdir(parents=True, exist_ok=True)
+        #self.PATH_RESULTS.mkdir(parents=True, exist_ok=True)
         if os.path.exists(self.PATH_RESULTS):
-            logger.info("Path to reduced directory has been created")
+            logger.info("Directory to reduced files exists")
         else:
-            logger.critical(f"{bcl.ERROR}Path to reduced directory has NOT been created{bcl.ENDC}")
-            sys.exit()
+            logger.critical(f"Directory to reduced files doesn't exists")
+            self.PATH_RESULTS.mkdir(parents=True, exist_ok=True)
+            logger.info(f"{bcl.OKGREEN}Directory to reduced files has been created{bcl.ENDC}")
 
         # Define the path to mask file
         self.path_mask = Path(path_mask)
@@ -142,7 +131,7 @@ class Reduction:
         if len(self.ic.summary) != 0:
             logger.info("Data collection is ready")
         else:
-            logger.critical(f"{bcl.ERROR}NOT files to reduce{bcl.ENDC}")
+            logger.critical("NOT files to reduce")
             sys.exit()
 
         # Define dictionaries
@@ -342,20 +331,41 @@ class Reduction:
                     key, value = elem.split('+')
                     types_targets = set(self.ic.summary['object'][self.ic.summary['obsmode'] == 'OsirisBroadBandImage'])
                     if key == 'flat':
-                        tmp_dict = {"obsmode":self.key_dict[key], filt: value}
-                        logger.info("Including flat frames.")
+                        try:
+                            tmp_dict = {"obsmode":self.key_dict[key], filt: value}
+                            logger.info("Including flat frames.")
+                        except Exception as e:
+                            logger.warning(f"There are no flat frames in the directory: {self.PATH}")
+                            self.DATA_DICT[elem] = []
+                            continue
                     elif key == 'std':
-                        target_type = [data for data in types_targets if 'STD' in data][0]
-                        tmp_dict = {"obsmode":self.key_dict[key], filt: value, 'object':target_type}
-                        logger.info("Including photometric calibration frames.")
+                        try:
+                            target_type = [data for data in types_targets if 'STD' in data][0]
+                            tmp_dict = {"obsmode":self.key_dict[key], filt: value, 'object':target_type}
+                            logger.info("Including photometric calibration frames.")
+                        except Exception as e:
+                            logger.warning(f"There are no photometric calibration frames in the directory: {self.PATH}")
+                            self.DATA_DICT[elem] = []
+                            continue
                     elif key == 'target':
-                        target_type = [data for data in types_targets if not 'STD' in data][0]
-                        tmp_dict = {"obsmode":self.key_dict[key], filt: value, 'object':target_type}
-                        logger.info("Including science frames.")
+                        try:
+                            target_type = [data for data in types_targets if not 'STD' in data][0]
+                            tmp_dict = {"obsmode":self.key_dict[key], filt: value, 'object':target_type}
+                            logger.info("Including science frames.")
+                        except Exception as e:
+                            logger.warning(f"There are no science frames in the directory: {self.PATH}")
+                            self.DATA_DICT[elem] = []
+                            continue
+                    
                     self.DATA_DICT[elem] = self.ic.files_filtered(**tmp_dict, include_path=True)
                 else:
-                    self.DATA_DICT[elem] = self.ic.files_filtered(obsmode='OsirisBias', include_path=True)
-                    logger.info("Including bias frames.")
+                    try:
+                        self.DATA_DICT[elem] = self.ic.files_filtered(obsmode='OsirisBias', include_path=True)
+                        logger.info("Including bias frames.")
+                    except Exception as e:
+                        logger.warning(f"There are no bias frames in the directory: {self.PATH}")
+                        self.DATA_DICT[elem] = []
+                        continue
 
 
 
@@ -458,7 +468,6 @@ class Reduction:
         This method performs a special cleaning when using Sloan_z to remove the interference pattern.
         """
         lst_results = [elem for elem in list(self.DATA_DICT.keys())]
-        #print(f'{bcl.HEADER}List of results: {lst_results}{bcl.ENDC}')
         if 'target+Sloan_z' in lst_results:
             logger.info("Removing the fringe on Sloan z filter.")
             fringe= self.target_dict['target+Sloan_z']
@@ -468,10 +477,18 @@ class Reduction:
             fr_free = [elem/masterfringe for elem in fringe]
             self.target_dict['fringe+Sloan_z'] = fr_free
             logger.info("Sci frames with free fringe.")
-            fringe_std = self.std_dict['std+Sloan_z']
-            fr_free_std = [elem/masterfringe for elem in fringe_std]
-            self.std_dict['fringe+Sloan_z'] = fr_free_std
-            logger.info("STD frame/s with free fringe.")
+            try:
+                fringe_std = self.std_dict['std+Sloan_z']
+                fr_free_std = [elem/masterfringe for elem in fringe_std]
+                self.std_dict['fringe+Sloan_z'] = fr_free_std
+                logger.info("STD frame/s with free fringe.")
+            except Exception as e:
+                logger.warning(f"There are no photometric calibration frames with Sloan z filter: {e}")
+                self.std_dict['fringe+Sloan_z'] = []
+        else:
+            logger.warning(f"There are no science frames with Sloan z filter to remove the fringe")
+            self.target_dict['fringe+Sloan_z'] = []
+            self.std_dict['fringe+Sloan_z'] = []
 
 
 
@@ -485,7 +502,6 @@ class Reduction:
         logger.info(f"Substracting sky background.")
         for elem in lst_target_keys:
             key, value = elem.split('+')
-            #lst_frames = self.target_dict['target+' + value]
             lst_frames = self.target_dict[elem]
             cube = np.dstack(lst_frames)
             cube.sort(axis=2)
@@ -577,7 +593,7 @@ class Reduction:
                 target= self.target_dict['sky+'+ filt]
                 logger.info("Science frames WITHOUT sky")
             else:
-                logger.warning(f"{bcl.WARNING}No defined option for saving the frames (if fringing is true, ignore this message){bcl.ENDC}")
+                #logger.warning(f"{bcl.WARNING}No defined option for saving the frames (if fringing is true, ignore this message){bcl.ENDC}")
                 #print("")
                 #print(f'{bcl.HEADER}{lst_results}{bcl.ENDC}')
                 #print(f'{bcl.HEADER}Key: {key}{bcl.ENDC}')
@@ -606,5 +622,5 @@ class Reduction:
                 raw_name , __ = filename.split('.')
 
                 logger.info(f"{bcl.OKGREEN}Storing the frame: ADP_{raw_name}_{imagetype}_{sky_status}_{filt} for {hd['FILTER2']}{bcl.ENDC}")
-                hdul.writeto(str(self.PATH_RESULTS / (f'ADP_{raw_name}_{imagetype}_{sky_status}_{filt}.fits')),
+                hdul.writeto(str(self.PATH_RESULTS / f'ADP_{raw_name}_{imagetype}_{sky_status}_{filt}.fits'),
                             overwrite=True)

@@ -17,7 +17,7 @@ Fabricio Manuel Pérez Toledo <fabricio.perez@gtc.iac.es>
 """
 
 __author__="Fabricio M. Pérez-Toledo"
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 __license__ = "GPL v3.0"
 
 from SAUSERO.check_files import *
@@ -31,6 +31,7 @@ from astropy import units as u
 import argparse, time, os, shutil, re
 import os, json, warnings
 import pkg_resources
+from pathlib import Path
 
 from SAUSERO.Color_Codes import bcolors as bcl
 from loguru import logger
@@ -38,20 +39,6 @@ from loguru import logger
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
-# Parse configuration
-#parser = argparse.ArgumentParser(
-#                     prog = 'OsirisDRP',
-#                     description = 'This software reduces observations taken with OSIRIS\
-#                        in BBI mode. It can process any filter configuration and is suitable\
-#                        for observations affected by fringing (Sloan_z).')
-#
-#parser.add_argument('-pr','--program', help='Select the GTC program.',
-#                     required=True, type=str)
-#
-#parser.add_argument('-bl','--block', help='Select the block of the program.',
-#                     required=True, type=str)
-#
-#args = parser.parse_args()
 
 ############## Predefined functions #############
 
@@ -59,15 +46,11 @@ def create_config_file_home():
     """
     This function creates a copy of the configuration file in .config/sausero/ for easier accessibility.
     """
-    if not os.path.exists(f"{os.path.expanduser('~')}/sausero/configuration.json"):
-        config_path = pkg_resources.resource_filename(
-        'SAUSERO', 'config/configuration.json')
-        os.makedirs(f"{os.path.expanduser('~')}/sausero/", exist_ok=True)
-        shutil.copy(config_path,f'{os.path.expanduser("~")}/sausero/configuration.json')
-        print(f"{bcl.WARNING}On the first run, it is necessary to relocate the configuration file to the ~/config/sausero/\n\
-directory for easier accessibility. Navigate to this directory to modify the paths to the code location and\n\
-the images to be processed. Once the modifications are made, you can start using SAUSERO.{bcl.ENDC}")
-        sys.exit()
+    config_path = pkg_resources.resource_filename(
+    'SAUSERO', 'config/configuration.json')
+    shutil.copy(config_path,Path(os.getcwd())/'configuration.json')
+    print(f"{bcl.OKGREEN}Configuration file created successfully in the current directory.{bcl.ENDC}")
+    sys.exit()
 
 def readJSON():
     """
@@ -76,12 +59,7 @@ def readJSON():
     Returns:
         json: Collection of configuration parameters 
     """
-    if os.path.exists(f"{os.path.expanduser('~')}/sausero/configuration.json"):
-        return json.load(open(f"{os.path.expanduser('~')}/sausero/configuration.json"))
-    else:
-        config_path = pkg_resources.resource_filename(
-            'SAUSERO', 'config/configuration.json')
-        return json.load(open(config_path))
+    return json.load(open(Path(os.getcwd())/'configuration.json'))
 
     
 
@@ -136,14 +114,11 @@ def run():
                             in BBI mode. It can process any filter configuration and is suitable\
                             for observations affected by fringing (Sloan_z).')
 
-    parser.add_argument('-pr','--program', help='Select the GTC program.',
-                         required=True, type=str)
-
-    parser.add_argument('-bl','--block', help='Select the block of the program.',
-                         required=True, type=str)
+    parser.add_argument('-e', '--execute', help='Execute the configuration file in the current directory.',
+                        action='store_true')
     
-    parser.add_argument('-a', '--abs_path', help='Absolute path to the data directory.',
-                         action='store_true')
+    parser.add_argument('-c', '--create_config', help='Create a configuration file in the current directory.',
+                        action='store_true')
 
     args = parser.parse_args()
 
@@ -174,23 +149,23 @@ an account on Astrometry.net. Once you have the code that allows you to use the 
 you need to fill in the correct variable.")
     print(f"\n")
 
-    create_config_file_home()
-
-    PRG = args.program
-    OB = args.block
+    # Check if the configuration file exists (2025-08-04)
+    if args.create_config:
+        print(f"{bcl.OKGREEN}Creating the configuration file in the current directory.{bcl.ENDC}")
+        print(f"{bcl.WARNING}You can edit it before you execute the reduction.{bcl.ENDC}")
+        create_config_file_home()
+        sys.exit()
 
     ########## Checking files (2025-01-22) ##########
-    check_files(pkg_resources.resource_filename('SAUSERO', 'config/configuration.json'), PRG, OB, abs_path=args.abs_path)
+    conf = check_files()
+
+    PRG = conf['PRG']
+    OB = conf['OB']
 
     hora_local = time.localtime()
-    conf = readJSON()
-
-    if args.abs_path:
-        logger.add(f"{str(Path(conf['DIRECTORIES']['PATH_DATA']).parent)}/sausero_{time.strftime('%Y-%m-%d_%H:%M:%S', hora_local)}.log", format="{time} {level} {message} ({module}:{line})", level="INFO",
-               filter=lambda record: 'astropy' not in record["name"])
-    else:
-        logger.add(f"{conf['DIRECTORIES']['PATH_DATA']}{PRG}_{OB}/sausero_{time.strftime('%Y-%m-%d_%H:%M:%S', hora_local)}.log", format="{time} {level} {message} ({module}:{line})", level="INFO",
-                   filter=lambda record: 'astropy' not in record["name"])
+    print(conf)
+    logger.add(Path(conf['DIRECTORIES']['PATH'])/f"sausero_{time.strftime('%Y-%m-%d_%H:%M:%S', hora_local)}.log", format="{time} {level} {message} ({module}:{line})", level="INFO",
+            filter=lambda record: 'astropy' not in record["name"])
         
     logger.info(f'{bcl.OKGREEN}Log file created{bcl.ENDC}')
     logger.info(f'{bcl.OKGREEN}Configuration has been updated successfully{bcl.ENDC}')
@@ -202,8 +177,8 @@ you need to fill in the correct variable.")
     logger.info(f'{bcl.OKBLUE}---------- Starting the reduction for {PRG}-{OB} ----------{bcl.ENDC}')
     
     bpm_path = pkg_resources.resource_filename('SAUSERO', 'BPM/BPM_OSIRIS_PLUS.fits')
-    o = Reduction(PRG, OB, main_path=conf['DIRECTORIES']['PATH_DATA'],
-                path_mask=bpm_path, abs_path=args.abs_path)
+    o = Reduction(main_path=conf['DIRECTORIES']['PATH_DATA'],
+                path_mask=bpm_path)
     o.get_imagetypes()
     o.load_BPM()
     o.sort_down_drawer()
@@ -258,7 +233,7 @@ you need to fill in the correct variable.")
     #Then, they are saved as aligned images.
     if conf['ALIGNING']['use_aligning']:
         logger.info(f"{bcl.OKBLUE}---------- Starting the alignment ----------{bcl.ENDC}")
-        al = OsirisAlign(PRG, OB, conf, abs_path=args.abs_path)
+        al = OsirisAlign(conf)
         for filt in list(set(al.ic.summary['filtro'])):
             for sky in ['SKY', 'NOSKY']:
                 if conf['REDUCTION']['save_not_sky'] or sky == 'SKY':
@@ -272,7 +247,7 @@ you need to fill in the correct variable.")
                     logger.info(f"Estimated total exposure time: {header['exptime']} sec")
                     wcs = fr.wcs
                     logger.info(f"Updating the WCS information")
-                    save_fits(align, header, wcs, al.PATH_REDUCED / f'{PRG}_{OB}_{filt}_stacked_{sky}.fits')
+                    save_fits(align, header, wcs, str(al.PATH_REDUCED / f'{PRG}_{OB}_{filt}_stacked_{sky}.fits'))
                     
                 else:
                     logger.warning(f'{bcl.WARNING}Alignment is not going to be executed for NOSKY{bcl.ENDC}')
@@ -293,7 +268,7 @@ you need to fill in the correct variable.")
         for filt in lst_filt:
             logger.info(f'{bcl.OKCYAN}++++++++++ Astrometrization for the stacked image with {filt} filter ++++++++++{bcl.ENDC}')
             try:
-                best_wcs, new_frame = solving_astrometry(PRG, OB, filt, conf, sky='SKY', calib_std=False, abs_path=args.abs_path)
+                best_wcs, new_frame = solving_astrometry(PRG, OB, filt, conf, sky='SKY', calib_std=False)
                 logger.info(f'{bcl.OKGREEN}New WCS for the stacked image with {filt} filter.{bcl.ENDC}')
             except:
                 new_frame = CCDData.read(al.PATH_REDUCED / f'{PRG}_{OB}_{filt}_stacked_SKY.fits', unit='adu')
@@ -336,7 +311,7 @@ you need to fill in the correct variable.")
         ic_std = ccdp.ImageFileCollection(al.PATH_REDUCED, keywords='*', glob_include='*STD*', glob_exclude='*NOSKY*')
         lst_object = list(set(ic_std.summary['object']))
         try:
-            best_wcs_std, new_frame_std = solving_astrometry(PRG, OB, filt, conf, sky='SKY', calib_std=True, abs_path=args.abs_path)
+            best_wcs_std, _ = solving_astrometry(PRG, OB, filt, conf, sky='SKY', calib_std=True)
             logger.info(f'{bcl.OKGREEN}New WCS for the STD star with {filt} filter.{bcl.ENDC}')
         except:
             best_wcs_std = None
@@ -380,7 +355,7 @@ you need to fill in the correct variable.")
                 continue
             logger.info(f'{bcl.OKCYAN}++++++++++ Filter selected is {filt} ++++++++++{bcl.ENDC}')
             try:
-                ZP, eZP = photometry(PRG, OB, ic_pho.files_filtered(imgtype='STD',filter2=filt)[0], conf, abs_path=args.abs_path)
+                ZP, eZP = photometry(PRG, OB, ic_pho.files_filtered(imgtype='STD',filter2=filt)[0], conf)
                 Results(al.PATH_REDUCED, ZP, eZP, o.MASK, filt, conf=conf)
                 logger.info(f'{bcl.OKGREEN}Photometry done for {filt} filter{bcl.ENDC}')
             except:
@@ -394,10 +369,7 @@ you need to fill in the correct variable.")
     logger.info(f'{bcl.OKBLUE}------------------- End of the photometry -------------------{bcl.ENDC}')
     print(2*"\n")
     # Final message
-    if args.abs_path:
-        logger.info(f'{bcl.OKBLUE}End of the reduction. The results are available in {al.PATH_REDUCED.parent/"reduced"}{bcl.ENDC}')
-    else:
-        logger.info(f'{bcl.OKBLUE}End of the reduction. The results are available in {conf["DIRECTORIES"]["PATH_DATA"]+f"{PRG}_{OB}/reduced/"}{bcl.ENDC}')
+    logger.info(f'{bcl.OKBLUE}End of the reduction. The results are available in {conf["DIRECTORIES"]["PATH_OUTPUT"]}{bcl.ENDC}')
     
     for archivo in glob.glob(str(al.PATH_REDUCED/"ADP*.fits")):
         nuevo_nombre = re.sub(r"_(Sloan)_[a-zA-Z]+", "", archivo)

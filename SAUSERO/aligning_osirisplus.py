@@ -35,7 +35,7 @@ class OsirisAlign:
     faint sources.
     """
     
-    def __init__(self, program, block, conf, abs_path=False):
+    def __init__(self, conf):
         """We initialize the class by defining important parameters.
 
         Args:
@@ -43,15 +43,7 @@ class OsirisAlign:
             block (str): Observational block number assigned to a science program
         """
         self.conf = conf
-        self.PATH = self.conf["DIRECTORIES"]["PATH_DATA"]
-        self.program = program
-        self.block = block
-        self.reduced_data_directory = "reduced"
-
-        if abs_path:
-            self.PATH_REDUCED = Path(self.PATH).parent/'reduced'
-        else:
-            self.PATH_REDUCED = Path(self.PATH + self.program + "_" + self.block + "/" + "reduced/")
+        self.PATH_REDUCED = Path(self.conf["DIRECTORIES"]["PATH_OUTPUT"])
         
         self.ic = ccdp.ImageFileCollection(self.PATH_REDUCED, keywords='*', glob_include='ADP*')
 

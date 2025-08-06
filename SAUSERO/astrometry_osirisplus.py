@@ -96,13 +96,7 @@ def apply_astrometrynet_client(filename, conf):
         logger.error(f"{bcl.ERROR}The WCS has not been received from the API{bcl.ENDC}")
         return None
 
-    #if wcs is not None:
-    #    #status_wcs = True
-    #    return wcs#, status_wcs
-    #else:
-    #    logger.error(f"{bcl.ERROR}The WCS has not been received from the API{bcl.ENDC}")
-    #    #status_wcs = False
-    #    #return img.wcs, status_wcs
+
 
 def modify_WCS(best_wcs, PATH_TO_FILE):
     """This method updates the original WCS with the WCS estimated by the Astrometry.net server.
@@ -127,7 +121,7 @@ def modify_WCS(best_wcs, PATH_TO_FILE):
         logger.info(f"{bcl.OKGREEN}The WCS for {os.path.basename(PATH_TO_FILE)} has been updated{bcl.ENDC}")
         return new_frame
 
-def solving_astrometry(PRG, OB, filt, conf, sky, calib_std = False, abs_path=False):
+def solving_astrometry(PRG, OB, filt, conf, sky, calib_std = False):
     """This method handles the procedure for obtaining the astrometry solution from the server.
 
     Args:
@@ -140,33 +134,20 @@ def solving_astrometry(PRG, OB, filt, conf, sky, calib_std = False, abs_path=Fal
         the FoV using the new WCS to estimate positions, and the science frame 
         with its WCS updated.
     """
-    root_path = conf["DIRECTORIES"]["PATH_DATA"]
+    path_file = Path(conf["DIRECTORIES"]["PATH_OUTPUT"])
 
     if calib_std:
         logger.info("Astrometry calibration for the STD star")
-        if abs_path:
-            LST_PATH_TO_FILE = glob.glob(str(Path(root_path).parent/'reduced'/f'*STD*.fits'))
-        else:
-            LST_PATH_TO_FILE = glob.glob(str(Path(root_path)/f'{PRG}_{OB}'/'reduced'/f'*STD*.fits'))
-        
+        LST_PATH_TO_FILE = glob.glob(str(path_file/f'*STD*.fits'))
         LST_PATH_TO_FILE = [file for file in LST_PATH_TO_FILE if filt in CCDData.read(file,unit='adu').header['FILTER2']]
     else:
         logger.info("Astrometry calibration for science target")
-        if abs_path:
-            LST_PATH_TO_FILE = [str(Path(root_path).parent/'reduced'/f'{PRG}_{OB}_{filt}_stacked_{sky}.fits')]
-        else:
-            LST_PATH_TO_FILE = [str(Path(root_path)/f'{PRG}_{OB}'/'reduced'/f'{PRG}_{OB}_{filt}_stacked_{sky}.fits')]
+        LST_PATH_TO_FILE = [str(path_file/f'{PRG}_{OB}_{filt}_stacked_{sky}.fits')]
+        
 
     PATH_TO_FILE = LST_PATH_TO_FILE[0]
     #print(f"{bcl.HEADER}Path to file: {PATH_TO_FILE}{bcl.ENDC}")
     best_wcs = apply_astrometrynet_client(PATH_TO_FILE, conf)
-
-    #if status_wcs:
-    #    new_frame = modify_WCS(best_wcs, PATH_TO_FILE)
-    #    logger.info(f"{bcl.OKGREEN}The new WCS for {os.path.basename(PATH_TO_FILE)} has been added successfully{bcl.ENDC}")
-    #else:
-    #    new_frame = modify_WCS(best_wcs, PATH_TO_FILE)
-    #    logger.warning(f"{bcl.WARNING}The WCS for {os.path.basename(PATH_TO_FILE)} has not been updated{bcl.ENDC}")
 
     new_frame = modify_WCS(best_wcs, PATH_TO_FILE)
 

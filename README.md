@@ -6,7 +6,7 @@ Developed by __Fabricio M. Pérez-Toledo__
 
 ## General Description
 
-**S**oftware to **AU**omatize in a **S**imple **E**nvironment the **R**eduction of **O**siris+ data (**SAUSERO**) processes OSIRIS+ raw science frames to address noise, cosmetic defects, and pixel heterogeneity, preparing them for photometric analysis. Correcting these artifacts is a critical prerequisite for reliable scientific analysis. The software applies observation-specific reduction steps, ensuring optimized treatment for different data types. Developed with a focus on simplicity and efficiency, **SAUSERO** streamlines the reduction pipeline, enabling researchers to obtain calibrated data ready for photometric studies.
+**S**oftware to **AU**tomatize in a **S**imple **E**nvironment the **R**eduction of **O**siris+ data (**SAUSERO**) processes OSIRIS+ raw science frames to address noise, cosmetic defects, and pixel heterogeneity, preparing them for photometric analysis. Correcting these artifacts is a critical prerequisite for reliable scientific analysis. The software applies observation-specific reduction steps, ensuring optimized treatment for different data types. Developed with a focus on simplicity and efficiency, **SAUSERO** streamlines the reduction pipeline, enabling researchers to obtain calibrated data ready for photometric studies.
 
 ### Key Reduction Steps:
 
@@ -50,17 +50,17 @@ To address cosmetic defects, a __Bad Pixel Mask (BPM)__ is applied, and the __LA
 The following Python packages are required (minimum versions specified), however, they will be installed
 automatically together the :
 
-    astroalign>=2.4.1
-    astrometry_net_client>=0.3.0
-    astropy>=5.3.4
-    astroquery>=0.4.6
-    ccdproc>=2.4.1
-    lacosmic>=1.1.0
-    loguru>=0.7.2
-    matplotlib>=3.8.0
-    numpy>=1.25.2
+    astroalign>=2.6.1
+    astrometry_net_client>=0.6.0
+    astropy>=7.1.0
+    astroquery>=0.4.10
+    ccdproc>=2.5.1
+    lacosmic>=1.3.0
+    loguru>=0.7.3
+    matplotlib>=3.10.3
+    numpy>=2.3.1
     PyYAML>=6.0.2
-    sep>=1.2.1`
+    sep>=1.4.1`
 
 ### Hardware Requirements
 - __RAM__: Minimum 4GB (higher is recommended for large datasets).
@@ -83,48 +83,51 @@ That's it! SAUSERO is now almost ready to use ;)
 
 If you don’t have an existing Conda environment, you can create one specifically for SAUSERO with the following commands:
 
-    conda create -n sausero_env python=3.9 -y
+    conda create -n sausero_env python=3.11 -y
     conda activate sausero_env
     pip install sausero
 
 ## First-Time Setup
 
-Once Conda is set up, you should run __SAUSERO__ for the first time to create the file `configuration.json` that has to be configured.
+Once Conda is set up, you should run __SAUSERO__ for the first time to create the file `configuration.json` that has to be configured after.
 
-    sausero -pr <your_program> -bl <your_ob>
+    $ sausero -c
 
-- `-pr`: Your GTC program indicator.
-- `-bl`: The observed block number.
+or
 
-**ATTENTION**: The first time, the code will 'fail' because the configuration file does not know the root 
-directory where the images are stored and your astrometry-api-key. To fix this, follow the instructions below.
+    $ sausero --create_config
 
-You must edit the configuration file, which is located in your home directory inside 
-a folder named `sausero/`.
+You must edit the configuration file, which is located in your frame directory.
 
 You need to set the following parameters in the configuration file:
 
-1. `PATH_DATA`: Set this to the root directory containing your frames. Example:
-
-    ```
-    "PATH_DATA": "/path/to/your/frames/"
-
-The directory structure must follow the format `<Your_Program>_<Your_OB>/`. Inside this directory, you should have 
-a `raw/` folder where the original frames are stored. During execution, __SAUSERO__ will create a new folder named 
-`reduced/`, where the reduced frames will be saved.
-
-2. `No_Session`: This is your Astrometry.net API key. Example:
+1. `No_Session` (Required): This is your Astrometry.net API key. Example:
 
     ```
     "No_Session":"astrometry-api-key"
 
 To obtain this key, create an account on [Astrometry.net](https://nova.astrometry.net/). Copy your API key and paste it into the configuration file.
 
+2. `Optional Setup`: You need to adjust the setup according to your observation. For example, if you are working with Sloan z and need to remove the fringing, you must enable the option in the `Reduction` section and set the `save_fringing` parameter to true. Regarding the alignment, astrometrization, or photometry parameters, they can be modified, but they generally work well as they are.
+
+The directory structure must follow the format `<Your_Program>_<Your_OB>/`. Inside this directory, you should have 
+a `raw/` folder where the original frames are stored, and a `reduced/` folder where the reduced frames will be saved.
+
+ Your_program/
+         - configuration.json
+         - raw/
+         - reduced/
+
+
 ## Running SAUSERO
 
-After updating and saving the configuration file, you can run the command again. This time, the software will execute successfully.
+After saving and updating the configuration file, you can run the command using the following argument. The software will execute successfully.
 
-    sausero -pr <your_program> -bl <your_ob>
+    $ sausero -e
+
+or
+
+    $ sausero --execute
 
 ### Outputs and Results
 

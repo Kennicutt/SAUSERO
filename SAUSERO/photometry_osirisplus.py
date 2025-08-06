@@ -47,12 +47,9 @@ def readJSON_STD():
     Returns:
         json: Collection of configuration parameters 
     """
-    if os.path.exists(f"{os.path.expanduser('~')}/sausero/photometric_standards.json"):
-        return json.load(open(f"{os.path.expanduser('~')}/sausero/photometric_standards.json"))
-    else:
-        std_path = pkg_resources.resource_filename(
-            'SAUSERO', 'config/photometric_standards.json')
-        return json.load(open(std_path))
+    std_path = pkg_resources.resource_filename(
+        'SAUSERO', 'config/photometric_standards.json')
+    return json.load(open(std_path))
     
 
 
@@ -76,7 +73,7 @@ def get_ugriz(values):
 
 bands_dict = readJSON_STD()
 
-def photometry(programa, bloque, filename, conf, extinction_dict=extinction_dict, bands_dict=bands_dict, abs_path=False):
+def photometry(programa, bloque, filename, conf, extinction_dict=extinction_dict, bands_dict=bands_dict):
     """This method estimates the instrumental magnitude (zeropoint) for the night, depending on the filter used.
 
     Args:
@@ -87,11 +84,7 @@ def photometry(programa, bloque, filename, conf, extinction_dict=extinction_dict
     Returns:
         float: Estimation of the instrumental magnitude and its error.
     """
-    
-    if abs_path:
-        path = Path(conf["DIRECTORIES"]["PATH_DATA"]).parent/'reduced'
-    else:
-        path = Path(conf["DIRECTORIES"]["PATH_DATA"])/f'{programa}_{bloque}'/'reduced'
+    path = Path(conf["DIRECTORIES"]["PATH_OUTPUT"])
 
     frame = CCDData.read(path/filename, unit='adu')
     logger.info("STD frame has been loaded successfully")

@@ -19,6 +19,7 @@ Fabricio Manuel Pérez Toledo <fabricio.perez@gtc.iac.es>
 import json, os
 import pkg_resources
 import ccdproc as ccdp
+from pathlib import Path
 
 def read_config(config_path):
     with open(config_path, 'r') as file:
@@ -32,8 +33,8 @@ def readJSON():
     Returns:
         json: Collection of configuration parameters 
     """
-    if os.path.exists(f"{os.path.expanduser('~')}/sausero/configuration.json"):
-        return json.load(open(f"{os.path.expanduser('~')}/sausero/configuration.json"))
+    if os.path.exists(Path(os.getcwd())/'configuration.json'):
+        return json.load(open(Path(os.getcwd())/'configuration.json'))
     else:
         config_path = pkg_resources.resource_filename(
             'SAUSERO', 'config/configuration.json')
@@ -43,6 +44,8 @@ def readJSON():
 def update_config(config_path, config):
     with open(config_path, 'w') as file:
         json.dump(config, file, indent=4)
+    
+    return config
 
 
 def classify_images(tab):
@@ -73,24 +76,39 @@ def classify_images(tab):
     return existence
 
 
-def check_files(config_path, PRG, OB, abs_path=False):
+def check_files():
 
-    conf = readJSON()#read_config(config_path)
+    conf = readJSON()
 
-    if abs_path:
-        directory = conf['DIRECTORIES']['PATH_DATA']
-    else:
-        directory = conf['DIRECTORIES']['PATH_DATA'] + f"{PRG}_{OB}/raw/"
+    directory = Path(os.getcwd())/'raw'
 
-    ic = ccdp.ImageFileCollection(directory, keywords=['OBSMODE','OBJECT','FILTER2','EXPTIME'])
+    ic = ccdp.ImageFileCollection(directory, keywords=['GTCPRGID','GTCOBID','OBSMODE','OBJECT','FILTER2','EXPTIME'])
     image_types = classify_images(ic.summary)
 
-    # Update config based on image types
-    conf['REDUCTION']['use_BIAS'] = image_types['exist_BIAS']
-    conf['REDUCTION']['use_FLAT'] = image_types['exist_SKYFLAT']
-    conf['REDUCTION']['use_STD'] = (image_types['exist_STD'] and image_types['exist_SKYFLAT'])
-    conf['REDUCTION']['save_std'] = (image_types['exist_STD'] and image_types['exist_SKYFLAT'])
-    conf['REDUCTION']['save_sky'] = image_types['exist_SCIENCE']
-    conf['PHOTOMETRY']['use_photometry'] = (image_types['exist_SKYFLAT'] and image_types['exist_STD'])
+    conf['PRG'] = [elem for elem in set(ic.summary['GTCPRGID'].value.data) if not 'CALIB' in elem][0]
+    conf['OB'] = [elem for elem in set(ic.summary['GTCOBID'].value.data) if not 'CALIB' in elem][0]
 
-    update_config(config_path, conf)
+    conf['DIRECTORIES']['PATH'] = str(Path(os.getcwd()))
+    conf['DIRECTORIES']['PATH_DATA'] = str(Path(os.getcwd())/'raw')
+    conf['DIRECTORIES']['PATH_OUTPUT'] = str(Path(os.getcwd())/'reduced') 
+
+    # Update config based on image types
+    if conf['REDUCTION']['use_BIAS']:
+        conf['REDUCTION']['use_BIAS'] = image_types['exist_BIAS']
+    
+    if conf['REDUCTION']['use_FLAT']:
+        conf['REDUCTION']['use_FLAT'] = image_types['exist_SKYFLAT']
+
+    if conf['REDUCTION']['use_STD']:
+        conf['REDUCTION']['use_STD'] = (image_types['exist_STD'] and image_types['exist_SKYFLAT'] and conf['REDUCTION']['use_FLAT'])
+
+    if conf['REDUCTION']['save_std']:
+        conf['REDUCTION']['save_std'] = (image_types['exist_STD'] and image_types['exist_SKYFLAT'] and conf['REDUCTION']['use_STD'])
+    
+    if conf['REDUCTION']['save_sky']:
+        conf['REDUCTION']['save_sky'] = image_types['exist_SCIENCE']
+    
+    if conf['PHOTOMETRY']['use_photometry']:
+        conf['PHOTOMETRY']['use_photometry'] = (image_types['exist_SKYFLAT'] and image_types['exist_STD'] and conf['REDUCTION']['use_STD'])
+
+    return update_config(conf['DIRECTORIES']['PATH'] + '/configuration.json', conf)
