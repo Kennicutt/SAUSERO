@@ -12,7 +12,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-Copyright (C) 2025 Gran Telescopio Canarias <https://www.gtc.iac.es>
+Copyright (C) 2026 Gran Telescopio Canarias <https://www.gtc.iac.es>
 Fabricio Manuel Pérez Toledo <fabricio.perez@gtc.iac.es>
 """
 
@@ -444,7 +444,7 @@ class Reduction:
             
             if (apply_flat == False) or (value == 'OPEN'):
                 self.master_dict['flat+' + value] = None
-
+            
             target= self.clean_target(elem, self.master_dict['bias'],self.master_dict['flat+' + value])
             lst_tg = []
             for tg in target:

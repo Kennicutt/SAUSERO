@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: sausero
-Version: 1.2.0
+Version: 1.2.1
 Summary: This software is designed to reduce Broad Band Imaging observations obtained with OSIRIS+.
 Home-page: https://github.com/Kennicutt/SAUSERO
 Author: Fabricio M. Pérez-Toledo
@@ -148,10 +148,10 @@ To obtain this key, create an account on [Astrometry.net](https://nova.astrometr
 The directory structure must follow the format `<Your_Program>_<Your_OB>/`. Inside this directory, you should have 
 a `raw/` folder where the original frames are stored, and a `reduced/` folder where the reduced frames will be saved.
 
- Your_program/
-         - configuration.json
-         - raw/
-         - reduced/
+    Your_program/
+        configuration.json
+        raw/
+        reduced/
 
 
 ## Running SAUSERO

@@ -12,12 +12,12 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-Copyright (C) 2025 Gran Telescopio Canarias <https://www.gtc.iac.es>
+Copyright (C) 2026 Gran Telescopio Canarias <https://www.gtc.iac.es>
 Fabricio Manuel Pérez Toledo <fabricio.perez@gtc.iac.es>
 """
 
 __author__="Fabricio M. Pérez-Toledo"
-__version__ = "1.2.0"
+__version__ = "1.2.1"
 __license__ = "GPL v3.0"
 
 from SAUSERO.check_files import *
@@ -77,6 +77,14 @@ def Results(PATH, ZP, eZP, MASK, filt, ext_info = extinction_dict, conf = None):
         filt (string): Filter used for the image acquisition.
     """
     ic = ccdp.ImageFileCollection(PATH, keywords='*', glob_include='*ast*')
+    try:
+        if len(ic.files) == 0:
+            ic = ccdp.ImageFileCollection(PATH, keywords='*', glob_include='*stacked*')
+        else:
+            ic = ccdp.ImageFileCollection(PATH, keywords='*', glob_include='*ADP*')
+    except:
+        logger.error(f'{bcl.ERROR}No science images found for photometry results{bcl.ENDC}')
+    
     for sky in ['SKY', 'NOSKY']:
         if conf['REDUCTION']['save_not_sky'] or sky == 'SKY':
             fname = ic.files_filtered(include_path=True, filtro=filt, ssky=sky)[0]
@@ -371,16 +379,17 @@ you need to fill in the correct variable.")
     # Final message
     logger.info(f'{bcl.OKBLUE}End of the reduction. The results are available in {conf["DIRECTORIES"]["PATH_OUTPUT"]}{bcl.ENDC}')
     
-    for archivo in glob.glob(str(al.PATH_REDUCED/"ADP*.fits")):
-        nuevo_nombre = re.sub(r"_(Sloan)_[a-zA-Z]+", "", archivo)
-        os.rename(archivo, nuevo_nombre)
-
-    try:
-        for archivo in glob.glob(str(al.PATH_REDUCED/"ADP*OPEN*.fits")):
-            nuevo_nombre = re.sub(r"_(OPEN)_+", "", archivo)
+    if conf['REDUCTION']['save_sky'] or conf['REDUCTION']['save_not_sky']:
+        for archivo in glob.glob(str(al.PATH_REDUCED/"ADP*.fits")):
+            nuevo_nombre = re.sub(r"_(Sloan)_[a-zA-Z]+", "", archivo)
             os.rename(archivo, nuevo_nombre)
-    except:
-        logger.info(f'No OPEN filter')
+    
+        try:
+            for archivo in glob.glob(str(al.PATH_REDUCED/"ADP*OPEN*.fits")):
+                nuevo_nombre = re.sub(r"_(OPEN)_+", "", archivo)
+                os.rename(archivo, nuevo_nombre)
+        except:
+            logger.info(f'No OPEN filter')
 
     print(2*"\n")
     print(f"{bcl.OKBLUE}************************* THANK YOU FOR USING SAUSERO *************************{bcl.ENDC}")

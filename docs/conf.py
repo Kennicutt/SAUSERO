@@ -7,7 +7,7 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'SAUSERO'
-copyright = '2025, Fabricio M. Pérez Toledo'
+copyright = '2026, Fabricio M. Pérez Toledo'
 author = 'Fabricio M. Pérez Toledo'
 release = '0.2.2'
 
