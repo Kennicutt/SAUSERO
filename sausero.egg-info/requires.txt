@@ -9,3 +9,5 @@ matplotlib
 numpy
 PyYAML
 sep
+sphinx
+sphinx-rtd-theme

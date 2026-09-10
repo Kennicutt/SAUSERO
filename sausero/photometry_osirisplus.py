@@ -28,7 +28,7 @@ from astropy.coordinates import FK5
 from astropy.visualization import LogStretch,imshow_norm, ZScaleInterval
 from matplotlib.patches import Ellipse
 
-from SAUSERO.Color_Codes import bcolors as bcl
+from sausero.Color_Codes import bcolors as bcl
 from loguru import logger
 from importlib.resources import files
 
@@ -47,7 +47,7 @@ def readJSON_STD():
     Returns:
         json: Collection of configuration parameters 
     """
-    std_text = files('SAUSERO').joinpath('config', 'photometric_standards.json').read_text()
+    std_text = files('sausero').joinpath('config', 'photometric_standards.json').read_text()
     
     return json.loads(std_text)
     

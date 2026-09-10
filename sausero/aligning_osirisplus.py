@@ -25,7 +25,7 @@ import time, os
 import matplotlib.pyplot as plt
 from astropy.visualization import LogStretch,imshow_norm, ZScaleInterval
 
-from SAUSERO.Color_Codes import bcolors as bcl
+from sausero.Color_Codes import bcolors as bcl
 from loguru import logger
 
 
@@ -44,7 +44,7 @@ class OsirisAlign:
         self.conf = conf
         self.PATH_REDUCED = Path(self.conf["DIRECTORIES"]["PATH_OUTPUT"])
         
-        self.ic = ccdp.ImageFileCollection(self.PATH_REDUCED, keywords='*', glob_include='ADP*')
+        self.ic = ccdp.ImageFileCollection(self.PATH_REDUCED, keywords='*', glob_include='ADP*SCIENCE*')
 
 
     def load_frames(self, filt, sky):

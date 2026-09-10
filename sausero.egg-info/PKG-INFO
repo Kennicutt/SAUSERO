@@ -1,10 +1,11 @@
 Metadata-Version: 2.4
 Name: sausero
-Version: 1.2.2
-Summary: This software is designed to reduce Broad Band Imaging observations obtained with OSIRIS+.
-Home-page: https://github.com/Kennicutt/SAUSERO
-Author: Fabricio M. Pérez-Toledo
-Author-email: fabricio.telescope@gmail.com
+Version: 1.2.4
+Summary: This software is designed to reduce OSIRIS+ observations.
+Author-email: "Fabricio M. Pérez-Toledo" <fabricio.perez@gtc.iac.es>
+License: GPL-3.0-only
+Project-URL: Homepage, https://github.com/Kennicutt/SAUSERO
+Project-URL: Bug Tracker, https://github.com/Kennicutt/SAUSERO/issues
 Classifier: Programming Language :: Python :: 3
 Classifier: License :: OSI Approved :: GNU General Public License v3 (GPLv3)
 Classifier: Operating System :: OS Independent
@@ -22,16 +23,9 @@ Requires-Dist: matplotlib
 Requires-Dist: numpy
 Requires-Dist: PyYAML
 Requires-Dist: sep
-Dynamic: author
-Dynamic: author-email
-Dynamic: classifier
-Dynamic: description
-Dynamic: description-content-type
-Dynamic: home-page
+Requires-Dist: sphinx
+Requires-Dist: sphinx-rtd-theme
 Dynamic: license-file
-Dynamic: requires-dist
-Dynamic: requires-python
-Dynamic: summary
 
 # SAUSERO
 
