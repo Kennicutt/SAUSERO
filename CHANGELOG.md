@@ -1,3 +1,6 @@
+## [1.2.4] - 2026‑09‑10
+- Fixed a bug in relation to pyproject.toml file.
+
 ## [1.2.3] - 2026‑09‑10
 - Fix a bug with the selection of science and STD images during the aligning. No afected the reduction, but it took exposure time from the STD images.
 - Add a pyproject.toml file to the project to facilitate the installation of the package.

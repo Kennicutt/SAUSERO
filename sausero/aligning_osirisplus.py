@@ -25,7 +25,7 @@ import time, os
 import matplotlib.pyplot as plt
 from astropy.visualization import LogStretch,imshow_norm, ZScaleInterval
 
-from SAUSERO.Color_Codes import bcolors as bcl
+from sausero.Color_Codes import bcolors as bcl
 from loguru import logger
 
 

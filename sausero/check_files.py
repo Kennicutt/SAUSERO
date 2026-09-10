@@ -36,7 +36,7 @@ def readJSON():
     if os.path.exists(Path(os.getcwd())/'configuration.json'):
         return json.load(open(Path(os.getcwd())/'configuration.json'))
     else:
-        config_path = str(files('SAUSERO').joinpath('config', 'configuration.json'))
+        config_path = str(files('sausero').joinpath('config', 'configuration.json'))
         return json.load(open(config_path))
 
 

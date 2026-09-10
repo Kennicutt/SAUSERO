@@ -20,11 +20,11 @@ __author__="Fabricio M. Pérez-Toledo"
 __version__ = "1.2.2"
 __license__ = "GPL v3.0"
 
-from SAUSERO.check_files import *
-from SAUSERO.reduction_osirisplus import *
-from SAUSERO.aligning_osirisplus import *
-from SAUSERO.astrometry_osirisplus import *
-from SAUSERO.photometry_osirisplus import *
+from sausero.check_files import *
+from sausero.reduction_osirisplus import *
+from sausero.aligning_osirisplus import *
+from sausero.astrometry_osirisplus import *
+from sausero.photometry_osirisplus import *
 
 from astropy import units as u
 
@@ -33,7 +33,7 @@ import os, json, warnings
 from importlib.resources import files
 from pathlib import Path
 
-from SAUSERO.Color_Codes import bcolors as bcl
+from sausero.Color_Codes import bcolors as bcl
 from loguru import logger
 
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -46,7 +46,7 @@ def create_config_file_home():
     """
     This function creates a copy of the configuration file in .config/sausero/ for easier accessibility.
     """
-    source = files('SAUSERO.config').joinpath('configuration.json')
+    source = files('sausero.config').joinpath('configuration.json')
     dest = Path.cwd() / 'configuration.json'
     dest.write_bytes(source.read_bytes())
     print(f"{bcl.OKGREEN}Configuration file created successfully in the current directory.{bcl.ENDC}")
@@ -190,7 +190,7 @@ you need to fill in the correct variable.")
     #Subsequently, the cleaned images are saved.
     logger.info(f'{bcl.OKBLUE}---------- Starting the reduction for {PRG}-{OB} ----------{bcl.ENDC}')
     
-    bpm_path = str(files('SAUSERO').joinpath('BPM', 'BPM_OSIRIS_PLUS.fits'))
+    bpm_path = str(files('sausero').joinpath('BPM', 'BPM_OSIRIS_PLUS.fits'))
     o = Reduction(main_path=conf['DIRECTORIES']['PATH_DATA'],
                 path_mask=bpm_path)
     o.get_imagetypes()
