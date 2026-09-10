@@ -17,7 +17,7 @@ Fabricio Manuel Pérez Toledo <fabricio.perez@gtc.iac.es>
 """
 
 __author__="Fabricio M. Pérez-Toledo"
-__version__ = "1.2.1"
+__version__ = "1.2.2"
 __license__ = "GPL v3.0"
 
 from SAUSERO.check_files import *
@@ -30,7 +30,7 @@ from astropy import units as u
 
 import argparse, time, os, shutil, re
 import os, json, warnings
-import pkg_resources
+from importlib.resources import files
 from pathlib import Path
 
 from SAUSERO.Color_Codes import bcolors as bcl
@@ -46,9 +46,9 @@ def create_config_file_home():
     """
     This function creates a copy of the configuration file in .config/sausero/ for easier accessibility.
     """
-    config_path = pkg_resources.resource_filename(
-    'SAUSERO', 'config/configuration.json')
-    shutil.copy(config_path,Path(os.getcwd())/'configuration.json')
+    source = files('SAUSERO.config').joinpath('configuration.json')
+    dest = Path.cwd() / 'configuration.json'
+    dest.write_bytes(source.read_bytes())
     print(f"{bcl.OKGREEN}Configuration file created successfully in the current directory.{bcl.ENDC}")
     sys.exit()
 
@@ -77,13 +77,19 @@ def Results(PATH, ZP, eZP, MASK, filt, ext_info = extinction_dict, conf = None):
         filt (string): Filter used for the image acquisition.
     """
     ic = ccdp.ImageFileCollection(PATH, keywords='*', glob_include='*ast*')
-    try:
-        if len(ic.files) == 0:
-            ic = ccdp.ImageFileCollection(PATH, keywords='*', glob_include='*stacked*')
-        else:
-            ic = ccdp.ImageFileCollection(PATH, keywords='*', glob_include='*ADP*')
-    except:
+    ic2 = ccdp.ImageFileCollection(PATH, keywords='*', glob_include='*JWST*')
+
+    if len(ic.files) == 0:
+        ic2 = ccdp.ImageFileCollection(PATH, keywords='*', glob_include='*stacked*')
+    elif (len(ic.files) == 0) and (len(ic2.files) == 0):
+        ic = ccdp.ImageFileCollection(PATH, keywords='*', glob_include='*ADP*')
+    elif (len(ic.files) != 0) or (len(ic2.files) != 0):
+        pass
+    else:
         logger.error(f'{bcl.ERROR}No science images found for photometry results{bcl.ENDC}')
+
+    if len(ic2.files) != 0:
+        ic = ic2
     
     for sky in ['SKY', 'NOSKY']:
         if conf['REDUCTION']['save_not_sky'] or sky == 'SKY':
@@ -184,55 +190,59 @@ you need to fill in the correct variable.")
     #Subsequently, the cleaned images are saved.
     logger.info(f'{bcl.OKBLUE}---------- Starting the reduction for {PRG}-{OB} ----------{bcl.ENDC}')
     
-    bpm_path = pkg_resources.resource_filename('SAUSERO', 'BPM/BPM_OSIRIS_PLUS.fits')
+    bpm_path = str(files('SAUSERO').joinpath('BPM', 'BPM_OSIRIS_PLUS.fits'))
     o = Reduction(main_path=conf['DIRECTORIES']['PATH_DATA'],
                 path_mask=bpm_path)
     o.get_imagetypes()
     o.load_BPM()
     o.sort_down_drawer()
 
-    if conf['REDUCTION']['use_BIAS']:
+    if conf['REDUCTION']['use_BIAS'] and conf['REDUCTION']['use_reduction']:
         o.do_masterbias()
 
     else:
         logger.warning(f'{bcl.WARNING}The masterbias is not going to be created{bcl.ENDC}')
 
-    if conf['REDUCTION']['use_FLAT']:
+    if conf['REDUCTION']['use_FLAT'] and conf['REDUCTION']['use_reduction']:
         o.do_masterflat()
 
     else:
         logger.warning(f'{bcl.WARNING}The masterflat is not going to be created{bcl.ENDC}')
     
-    if conf['REDUCTION']['use_STD']:
+    if conf['REDUCTION']['use_STD'] and conf['REDUCTION']['use_reduction']:
         o.get_std(no_CRs=conf['REDUCTION']['no_CRs'], contrast_arg = conf['REDUCTION']['contrast'],
             cr_threshold_arg = conf['REDUCTION']['cr_threshold'],
             neighbor_threshold_arg = conf['REDUCTION']['neighbor_threshold'], apply_flat=conf['REDUCTION']['use_FLAT'])
 
     else:
         logger.warning(f'{bcl.WARNING}The STD star is not going to be reduced{bcl.ENDC}')
+
+    if conf['REDUCTION']['use_reduction']:
+        o.get_target(no_CRs=conf['REDUCTION']['no_CRs'], contrast_arg = conf['REDUCTION']['contrast'],
+                cr_threshold_arg = conf['REDUCTION']['cr_threshold'],
+                neighbor_threshold_arg = conf['REDUCTION']['neighbor_threshold'], apply_flat=conf['REDUCTION']['use_FLAT'])
+    else:
+        logger.warning(f'{bcl.WARNING}The science images are not going to be reduced{bcl.ENDC}')
     
-    o.get_target(no_CRs=conf['REDUCTION']['no_CRs'], contrast_arg = conf['REDUCTION']['contrast'],
-            cr_threshold_arg = conf['REDUCTION']['cr_threshold'],
-            neighbor_threshold_arg = conf['REDUCTION']['neighbor_threshold'], apply_flat=conf['REDUCTION']['use_FLAT'])
     
-    
-    if conf['REDUCTION']['save_fringing']:
+    if conf['REDUCTION']['save_fringing'] and conf['REDUCTION']['use_reduction']:
         o.remove_fringing()
         logger.info(f'{bcl.OKGREEN}Fringing correction applied successfully{bcl.ENDC}')
     else:
         logger.warning(f'{bcl.WARNING}The fringing correction is not going to be executed{bcl.ENDC}')
 
-    if conf['REDUCTION']['save_not_sky']:    
+    if conf['REDUCTION']['save_not_sky'] and conf['REDUCTION']['use_reduction']:    
         o.sustract_sky()
         logger.info(f'{bcl.OKGREEN}The sky subtraction has been applied successfully{bcl.ENDC}')
     else:
         logger.warning(f'{bcl.WARNING}The sky substraction is not going to be executed{bcl.ENDC}')
     
-    o.save_target(std=conf['REDUCTION']['save_std'])
-    o.save_target(std=conf['REDUCTION']['save_std'], fringing=conf['REDUCTION']['save_fringing'])
-    o.save_target(sky=conf['REDUCTION']['save_sky'])
-    o.save_target(fringing=conf['REDUCTION']['save_fringing'])    
-    o.save_target(not_sky=conf['REDUCTION']['save_not_sky'])
+    if conf['REDUCTION']['use_reduction']:
+        o.save_target(std=conf['REDUCTION']['save_std'])
+        o.save_target(std=conf['REDUCTION']['save_std'], fringing=conf['REDUCTION']['save_fringing'])
+        o.save_target(sky=conf['REDUCTION']['save_sky'])
+        o.save_target(fringing=conf['REDUCTION']['save_fringing'])    
+        o.save_target(not_sky=conf['REDUCTION']['save_not_sky'])
     logger.info(f'{bcl.OKBLUE}-------------- End of the reduction successfully --------------{bcl.ENDC}')
     print(2*"\n")
 
@@ -380,9 +390,9 @@ you need to fill in the correct variable.")
     logger.info(f'{bcl.OKBLUE}End of the reduction. The results are available in {conf["DIRECTORIES"]["PATH_OUTPUT"]}{bcl.ENDC}')
     
     if conf['REDUCTION']['save_sky'] or conf['REDUCTION']['save_not_sky']:
-        for archivo in glob.glob(str(al.PATH_REDUCED/"ADP*.fits")):
-            nuevo_nombre = re.sub(r"_(Sloan)_[a-zA-Z]+", "", archivo)
-            os.rename(archivo, nuevo_nombre)
+        #for archivo in glob.glob(str(al.PATH_REDUCED/"ADP*.fits")):
+            #nuevo_nombre = re.sub(r"_(Sloan)_[a-zA-Z]+", "", archivo)
+            #os.rename(archivo, nuevo_nombre)
     
         try:
             for archivo in glob.glob(str(al.PATH_REDUCED/"ADP*OPEN*.fits")):

@@ -39,8 +39,7 @@ class OsirisAlign:
         """We initialize the class by defining important parameters.
 
         Args:
-            program (str): Science program code
-            block (str): Observational block number assigned to a science program
+            conf (dict): Collection of configuration parameters
         """
         self.conf = conf
         self.PATH_REDUCED = Path(self.conf["DIRECTORIES"]["PATH_OUTPUT"])
@@ -53,6 +52,7 @@ class OsirisAlign:
 
         Args:
             filt (str): Filter name
+            sky (str): Sky condition (e.g., 'SKY' or 'NOSKY')
 
         Returns:
             list: A list of science frames for a given filter and its path
@@ -76,6 +76,7 @@ class OsirisAlign:
 
         Args:
             filt (str): Filter name
+            sky (str): Sky condition (e.g., 'SKY' or 'NOSKY')
 
         Returns:
             list: List of science frames for each filter (matrices)
@@ -93,6 +94,7 @@ class OsirisAlign:
 
         Args:
             filt (str): Filter name
+            sky (str): Sky condition (e.g., 'SKY' or 'NOSKY')
 
         Returns:
             float: Stacked image obtained by combining multiple science frames.
