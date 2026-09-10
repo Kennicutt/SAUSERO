@@ -30,7 +30,7 @@ from matplotlib.patches import Ellipse
 
 from SAUSERO.Color_Codes import bcolors as bcl
 from loguru import logger
-import pkg_resources
+from importlib.resources import files
 
 extinction_dict = {
     'Sloan_u': [0.45, 0.02],
@@ -47,9 +47,9 @@ def readJSON_STD():
     Returns:
         json: Collection of configuration parameters 
     """
-    std_path = pkg_resources.resource_filename(
-        'SAUSERO', 'config/photometric_standards.json')
-    return json.load(open(std_path))
+    std_text = files('SAUSERO').joinpath('config', 'photometric_standards.json').read_text()
+    
+    return json.loads(std_text)
     
 
 

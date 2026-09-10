@@ -5,6 +5,7 @@
         "PATH_OUTPUT": ""
     },
     "REDUCTION": {
+        "use_reduction": true,
         "use_BIAS": true,
         "use_FLAT": true,
         "use_STD": true,
