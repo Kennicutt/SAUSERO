@@ -44,7 +44,7 @@ class OsirisAlign:
         self.conf = conf
         self.PATH_REDUCED = Path(self.conf["DIRECTORIES"]["PATH_OUTPUT"])
         
-        self.ic = ccdp.ImageFileCollection(self.PATH_REDUCED, keywords='*', glob_include='ADP*')
+        self.ic = ccdp.ImageFileCollection(self.PATH_REDUCED, keywords='*', glob_include='ADP*SCIENCE*')
 
 
     def load_frames(self, filt, sky):

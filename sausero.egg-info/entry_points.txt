@@ -1,2 +1,2 @@
 [console_scripts]
-sausero = SAUSERO.OsirisDRP:run
+sausero = sausero.OSIRISDRP:run
