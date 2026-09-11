@@ -1,3 +1,6 @@
+## [1.2.6] - 2026‑09‑11
+- Update the version number in the pyproject.toml file and in the OsirisDRP.py file to 1.2.6.
+
 ## [1.2.5] - 2026‑09‑11
 - Fixed a bug in the installation process related to pyproject.toml file.
 
