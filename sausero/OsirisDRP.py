@@ -17,7 +17,7 @@ Fabricio Manuel Pérez Toledo <fabricio.perez@gtc.iac.es>
 """
 
 __author__="Fabricio M. Pérez-Toledo"
-__version__ = "1.2.2"
+__version__ = "1.2.5"
 __license__ = "GPL v3.0"
 
 from sausero.check_files import *

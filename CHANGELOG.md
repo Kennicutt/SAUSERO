@@ -1,3 +1,6 @@
+## [1.2.5] - 2026‑09‑11
+- Fixed a bug in the installation process related to pyproject.toml file.
+
 ## [1.2.4] - 2026‑09‑10
 - Fixed a bug in relation to pyproject.toml file.
 
